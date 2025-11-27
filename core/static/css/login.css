@@ -1,0 +1,136 @@
+/* =======================================
+   Login Page Styles
+   Compatible with existing dashboard CSS
+   ======================================= */
+
+/* Reset & base font */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  background-color: #f5f6fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: #fff;
+}
+
+/* Login container */
+.login-container {
+  background-color: #fff; /* white card like dashboard cards */
+  color: #000;
+  border-radius: 12px; /* match dashboard card rounding */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15); /* subtle shadow for depth */
+  padding: 40px 30px;
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Heading */
+.login-container h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 25px;
+  color: #1f2430;
+  text-align: center;
+}
+
+/* Form layout */
+.login-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Labels */
+.login-container label {
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+/* Input fields */
+.login-container input[type="text"],
+.login-container input[type="email"],
+.login-container input[type="password"] {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+}
+
+.login-container input:focus {
+  border-color: #1d4ed8; /* match blue button hover */
+  outline: none;
+}
+
+/* Login button */
+.login-container .btn-login {
+  background-color: #1d4ed8; /* Blue-600 */
+  color: #fff;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.login-container .btn-login:hover {
+  background-color: #1e40af; /* Blue-700 hover */
+}
+
+/* Remember me & forgot password */
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.login-options a {
+  color: #1d4ed8;
+  text-decoration: none;
+}
+
+.login-options a:hover {
+  text-decoration: underline;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 30px 20px;
+  }
+}
+
+/* Optional Error Message Box (matches your dashboard style) */
+.error-box {
+  background-color: #fee2e2; /* light red */
+  border-left: 5px solid #dc2626; /* red-600 */
+  padding: 12px 15px;
+  border-radius: 8px;
+  color: #b91c1c; /* red-700 */
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+.info-note {
+    background-color: #f0f8ff;
+    border-left: 4px solid #1e90ff;
+    padding: 10px;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    color: #333;
+}

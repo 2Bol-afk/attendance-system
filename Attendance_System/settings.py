@@ -27,6 +27,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# settings.py
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.EmailOrUsernameBackend',  # custom backend first
+    'django.contrib.auth.backends.ModelBackend', # default backend
+]
 
 # Application definition
 
@@ -51,7 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    #'accounts.middleware.first_login_middleware.FirstLoginMiddleware',
+    'accounts.middleware.FirstLoginMiddleware',
     
 ]
 

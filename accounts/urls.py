@@ -13,4 +13,8 @@ urlpatterns = [
     path('ajax/load-subjects/', views.load_subjects, name='load_subjects'),
     path('parent/',views.manage_parents,name='manage_parent'),
     path('parent/add/',views.add_parent,name='add_parent'),
+    path('parent/<int:parent_id>/edit/',views.edit_parent, name='edit_parent'),
+    path('parent/<int:parent_id>/delete/',views.delete_parent,name='delete_parent'),
+    path('login/',views.custom_login,name= 'login'),
+    path('change-password/',views.change_password,name='change_password')
 ]

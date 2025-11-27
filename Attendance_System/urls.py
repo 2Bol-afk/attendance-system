@@ -18,12 +18,19 @@ from django.contrib import admin
 from django.urls import path,include
 from django.conf import settings
 from django.conf.urls.static import static
+from accounts import views
+
 
 urlpatterns = [
+     path('', views.custom_login, name='login'),  # root URL goes to login
     path('admin/', admin.site.urls),
     path('dashboard/',include('dashboard.urls')),
     path('academic/',include('academics.urls')),
-    path('accounts/',include('accounts.urls'))
+    path('accounts/',include('accounts.urls')),
+    path('accounts/', include([
+        path('login/', views.custom_login, name='login'),
+        path('change-password/', views.change_password, name='change_password'),
+    ])),
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,54 @@
+{% extends 'teacherbase.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h2>Home</h2>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon"><img src="{% static 'icons/students.png' %}" alt="Students"></div>
+      <div class="stat-info">
+        <h3>{{ total_students }}</h3>
+        <p>Total Students</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><img src="{% static 'icons/attendance.png' %}" alt="Attendance"></div>
+      <div class="stat-info">
+        <h3>{{ total_attendance }}</h3>
+        <p>Attendance Today</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><img src="{% static 'icons/subjects.png' %}" alt="Subjects"></div>
+      <div class="stat-info">
+        <h3>{{ total_subjects }}</h3>
+        <p>Subjects Assigned</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <h3>Quick Actions</h3>
+    <div class="actions-row">
+      <div class="action-card">
+        <img src="{% static 'icons/add_student.png' %}" alt="Add Student">
+        <p>Add Student</p>
+      </div>
+      <div class="action-card">
+        <img src="{% static 'icons/mark_attendance.png' %}" alt="Mark Attendance">
+        <p>Mark Attendance</p>
+      </div>
+      <div class="action-card">
+        <img src="{% static 'icons/add_subject.png' %}" alt="Assign Subject">
+        <p>Assign Subject</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

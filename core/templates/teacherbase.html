@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Dashboard</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="left-container">
+    <h1>Teacher Dashboard</h1>
+    <h5>Welcome, {{ request.user.first_name }}</h5>
+    
+    <div class="menu">
+      <a href="#" class="{% if request.path == '/teacher/' %}active{% endif %}">
+        <svg><!-- dashboard icon --></svg> Home
+      </a>
+      <a href="# class="{% if request.path == '/teacher/attendance/' %}active{% endif %}">
+        <svg><!-- attendance icon --></svg> Attendance
+      </a>
+      <a href="#" class="{% if request.path == '/teacher/subject-assign/' %}active{% endif %}">
+        <svg><!-- subject icon --></svg> Subject Assign
+      </a>
+      <a href="#" class="{% if request.path == '/teacher/student-list/' %}active{% endif %}">
+        <svg><!-- student icon --></svg> Student List
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    {% block content %}
+    {% endblock %}
+  </div>
+
+</body>
+</html>

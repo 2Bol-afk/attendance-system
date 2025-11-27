@@ -4,13 +4,11 @@
 {% block content %}
 <div class="dashboard-container">
 
-  <!-- Header -->
   <div class="dashboard-header">
     <h2>Manage Parents</h2>
-    <a href="{% url 'accounts:add_parent' %}" class="add-student-btn">+ Add Parent</a>
+    <a href="#" id="openAddParentsModal" class="add-student-btn">+ Add Parent</a>
   </div>
 
-  <!-- Parents Table -->
   <div class="attendance-box">
     <table class="recent-table">
       <thead>
@@ -22,7 +20,6 @@
           <th>Actions</th>
         </tr>
       </thead>
-
       <tbody>
         {% for parent in parents %}
         <tr>
@@ -30,25 +27,105 @@
           <td>{{ parent.contact_number }}</td>
           <td>{{ parent.user.email }}</td>
           <td>
-          {% for student in parent.students.all %}
-            {{ student.first_name }} {{ student.last_name }}<br>
-          {% empty %}
-            <span style="color:gray;">No students</span>
-          {% endfor %}
-        </td>
+            {% for student in parent.students.all %}
+              {{ student.first_name }} {{ student.last_name }}<br>
+            {% empty %}
+              <span style="color:gray;">No students</span>
+            {% endfor %}
+          </td>
           <td>
-            <a href="#" class="edit-btn">Edit</a>
-            <a href="#" class="delete-btn">Delete</a>
+            <a href="#" class="edit-btn" data-target="#editModal{{ parent.id }}">Edit</a>
+            <a href="#" class="delete-btn" data-target="#deleteModal{{ parent.id }}">Delete</a>
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="6" class="empty-row">No parents found.</td>
+          <td colspan="6">No parents found.</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
+  <!-- Add Parent Modal -->
+  <div id="addParentModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Add Parent</h2>
+      <form method="post" action="{% url 'accounts:add_parent' %}">
+        {% csrf_token %}
+        {{ parent_form.as_p }}
+        <button type="submit" class="btn">Save Parent</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Modals -->
+  {% for parent in parents %}
+  <div id="editModal{{ parent.id }}" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Edit Parent</h2>
+      <form method="post" action="{% url 'accounts:edit_parent' parent.id %}">
+        {% csrf_token %}
+        
+      <div class="form-group">
+        <label for="first_name_{{ parent.id }}">First Name</label>
+        <input type="text" name="first_name" id="first_name_{{ parent.id }}" value="{{ parent.first_name }}" required>
+      </div>
+      <div class="form-group">
+        <label for="middle_name_{{ parent.id }}">Middle Name</label>
+        <input type="text" name="middle_name" id="middle_name_{{ parent.id }}" value="{{ parent.middle_name }}">
+      </div>
+      <div class="form-group">
+        <label for="last_name_{{ parent.id }}">Last Name</label>
+        <input type="text" name="last_name" id="last_name_{{ parent.id }}" value="{{ parent.last_name }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="last_name_{{ parent.id }}">Contact Number</label>
+        <input type="text" name="contact_number" id="contact_number_{{ parent.id }}" value="{{ parent.contact_number }}" required>
+      </div>
+      <button type="submit" class="btn">Update Teacher</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="deleteModal{{ parent.id }}" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Delete Parent</h2>
+      <p>Are you sure you want to delete <strong>{{ parent.first_name }} {{ parent.last_name }}</strong>?</p>
+      <form method="post" action="{% url 'accounts:delete_parent' parent.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <button type="button" class="btn" onclick="document.getElementById('deleteModal{{ parent.id }}').style.display='none'">Cancel</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  function openModal(modal){ if (!modal) return; modal.style.display="block"; }
+  document.querySelectorAll(".close").forEach(btn => {
+    btn.onclick = function(){ this.closest(".modal").style.display="none"; }
+  });
+  window.onclick = function(event){ if(event.target.classList.contains("modal")) event.target.style.display="none"; }
+
+  const addBtn = document.getElementById("openAddParentsModal");
+  const addModal = document.getElementById("addParentModal");
+  if(addBtn){ addBtn.onclick = e => { e.preventDefault(); openModal(addModal); }; }
+
+  document.querySelectorAll(".edit-btn, .delete-btn").forEach(btn => {
+    btn.onclick = e => {
+      e.preventDefault();
+      const modal = document.querySelector(btn.getAttribute("data-target"));
+      openModal(modal);
+    };
+  });
+});
+</script>
 {% endblock %}

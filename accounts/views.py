@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import TeacherProfile,StudentProfile,CustomUser,ParentProfile
 from .forms import TeacherProfileForm, TeacherUserForm,StudentUserForm,StudentProfileForm,parentProfileForm,parentUserForm
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model,update_session_auth_hash,authenticate,login
 from django.utils.crypto import get_random_string
 from django.contrib import messages
 from django.views.decorators.http import require_POST
@@ -12,6 +12,9 @@ from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import SetPasswordForm
+
 
 User = get_user_model()
 
@@ -404,16 +407,27 @@ def load_subjects(request):
 def manage_parents(request):
     parents = ParentProfile.objects.all()
     return render(request,'dashboard/manage_parents.html',{
-        'parents': parents
+        'parents': parents,
+        'user_form': parentUserForm(),
+        'parent_form': parentProfileForm(),
     })
 
 def add_parent(request):
-    if request.method == 'POST':
-        user_form = parentUserForm(request.POST)
-        parent_form = parentProfileForm(request.POST)
+    try:
+        if request.method == 'POST':
+            user_form = parentUserForm(request.POST)
+            parent_form = parentProfileForm(request.POST)
 
         if user_form.is_valid() and parent_form.is_valid():
+            
+            parent_first_name = parent_form.cleaned_data['first_name']
+            parent_last_name = parent_form.cleaned_data['last_name']
+            parent_email,parent_username =  generate_unique_email(
+                parent_first_name,parent_last_name,domain="parent.isufst.com"
+            )
             user = user_form.save(commit=False)
+            user.email = parent_email
+            user.username = parent_username
             user.set_password(get_random_string(8))
             user.role = 'parent'
             user.first_login = True
@@ -424,65 +438,96 @@ def add_parent(request):
             parent.save()
 
             return redirect('accounts:manage_parent')
+    except IntegrityError:
+        user_form.add_error(None,"Email Already exists.")
+    except Exception as error:
+        parent_form.add_error(None,f"An unexpected Errror occured: {error}")
+    
     else:
         user_form = parentUserForm()
         parent_form = parentProfileForm()
     return render(request,'dashboard/manage_parents.html',{
         'user_form':user_form,
-        'parent_form':parent_form
+        'parent_form':parent_form,
+        'parents': ParentProfile.objects.all()
     })
 
+def edit_parent(request,parent_id):
+    parent = get_object_or_404(ParentProfile,id=parent_id)
 
-
-
-
-
-# Login
-# -------------------------------
-'''def user_login(request):
     if request.method == "POST":
-        email = request.POST.get('email')
-        password = request.POST.get('password')
+        parent_form = parentProfileForm(request.POST, instance=parent)
 
-        try:
-            user = CustomUser.objects.get(email=email)
-        except CustomUser.DoesNotExist:
-            user = None
+        if parent_form.is_valid():
+            parent_form.save()
+            messages.success(request,"Parent Updated successfully")
+            return redirect('accounts:manage_parent')
+    else:
+        parent_form = parentProfileForm(instance=parent)
+    
+    return render (request, 'dashboard/manage_parents.html',{
+        'parent':parent,
+        'parent_form': parent_form
+    })
+
+def delete_parent(request, parent_id):
+    parent = get_object_or_404(ParentProfile, id=parent_id)
+    if request.method == "POST":
+        parent.user.delete()
+        parent.delete()
+        
+        messages.success(request, "Parent successfully deleted.")
+    return redirect('accounts:manage_parent')  # redirect to parent list
+
+
+def change_password(request):
+    if request.method == 'POST':
+        form = SetPasswordForm(user=request.user,data=request.POST)
+        if form.is_valid():
+            user = form.save()
+            user.first_login = False
+            user.save()
+            update_session_auth_hash(request, user)
+            messages.success(request,  "Password changes successfully!")
+            return redirect('dashboard:admin_dashboard')
+    else:
+        form = SetPasswordForm(user=request.user)
+
+    return render(request, 'dashboard/change_password.html',{
+        'form':form
+    })
+
+def custom_login(request):
+    if request.method == 'POST':
+        username = request.POST['email']
+        password = request.POST.get('password', '')  # allow blank for first login
+
+        user = authenticate(request, username=username, password=password)
+        print('Login attempt:', username, 'Password:', password)
+        print('User:', user)
+
 
         if user:
-            auth_user = authenticate(request, username=user.username, password=password)
-            if auth_user:
-                login(request, auth_user)
+            login(request, user)
 
-                if auth_user.first_login:
-                    return redirect('accounts:change_password_first_time')
-                else:
-                    if auth_user.role == 'admin':
-                        return redirect('dashboard:dashboard_home')
-                    elif auth_user.role == 'teacher':
-                        return redirect('dashboard:teacher_home')
-                    elif auth_user.role == 'student':
-                        return redirect('dashboard:student_home')
+            if user.first_login:
+                return redirect('accounts:change_password')
+
+            # Role-based redirect
+            if user.role == 'admin':
+                return redirect('dashboard:admin_dashboard')
+            elif user.role == 'teacher':
+                return redirect('dashboard:teacher_dashboard')
+            elif user.role == 'student':
+                return redirect('dashboard:student_dashboard')
+            elif user.role == 'parent':
+                return redirect('dashboard:parent_dashboard')
             else:
-                messages.error(request, "Incorrect password.")
+                return redirect('home')
+
         else:
-            messages.error(request, "User with this email does not exist.")
+            messages.error(request, "Invalid Credentials.")
 
-    return render(request, 'accounts/login.html')'''
+    return render(request, 'dashboard/login.html')
 
-'''def change_password_first_time(request):
-    if request.method == "POST":
-        new_password = request.POST.get('new_password')
-        confirm_password = request.POST.get('confirm_password')
 
-        if new_password and new_password == confirm_password:
-            request.user.password = make_password(new_password)
-            request.user.first_login = False
-            request.user.save()
-            messages.success(request, "Password changed successfully!")
-            return redirect('dashboard:dashboard_home')
-        else:
-            messages.error(request, "Passwords do not match.")
-
-    return render(request, 'accounts/change_password.html')
-'''
