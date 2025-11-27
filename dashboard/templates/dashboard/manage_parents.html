@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h2>Manage Parents</h2>
+    <a href="{% url 'accounts:add_parent' %}" class="add-student-btn">+ Add Parent</a>
+  </div>
+
+  <!-- Parents Table -->
+  <div class="attendance-box">
+    <table class="recent-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Contact</th>
+          <th>Email</th>
+          <th>Students</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for parent in parents %}
+        <tr>
+          <td>{{ parent.first_name }} {{ parent.middle_name }} {{ parent.last_name }}</td>
+          <td>{{ parent.contact_number }}</td>
+          <td>{{ parent.user.email }}</td>
+          <td>
+          {% for student in parent.students.all %}
+            {{ student.first_name }} {{ student.last_name }}<br>
+          {% empty %}
+            <span style="color:gray;">No students</span>
+          {% endfor %}
+        </td>
+          <td>
+            <a href="#" class="edit-btn">Edit</a>
+            <a href="#" class="delete-btn">Delete</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="empty-row">No parents found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

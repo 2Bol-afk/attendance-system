@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="dashboard-container">
+
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h2>Welcome back, Admin!</h2>
+  </div>
+
+  <!-- Top Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <img src="{% static 'images/studentlogo.jpg' %}" alt="Student Icon">
+      </div>
+      <div class="stat-info">
+        <h3>245</h3>
+        <p>Total Students</p>
+        <a href="{% url 'accounts:manage_student' %}" class="view-link">View all</a>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <img src="{% static 'images/teacherlogo.jpg' %}" alt="Teacher Icon">
+      </div>
+      <div class="stat-info">
+        <h3>15</h3>
+        <p>Total Teachers</p>
+        <a href="{% url 'accounts:manage_teacher' %}" class="view-link">View all</a>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <img src="{% static 'images/family.png' %}" alt="Parent Icon">
+      </div>
+      <div class="stat-info">
+        <h3>230</h3>
+        <p>Total Parents</p>
+        <a href="{% url 'accounts:manage_parent' %}" class="view-link">View all</a>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">
+        <img src="{% static 'images/book.png' %}" alt="Subject Icon">
+      </div>
+      <div class="stat-info">
+        <h3>12</h3>
+        <p>Total Subjects</p>
+        
+        <a href="{% url 'academics:manage_subjects' %}" class="view-link">View all</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <h3>Quick Actions</h3>
+    <div class="actions-row">
+      <div class="action-card">
+        <img src="{% static 'images/addstudent.png' %}" alt="Add Student Icon">
+        <p>Add Student</p>
+      </div>
+      <div class="action-card">
+        <img src="{% static 'images/addteacher.png' %}" alt="Add Teacher icon">
+        <p>Add Teacher</p>
+      </div>
+      <div class="action-card">
+        <img src="{% static 'images/markattendance.jpg' %}" alt="Mark Attendance icon">
+        <p>Mark Attendance</p>
+      </div>
+      <div class="action-card">
+        <img src="https://www.seekpng.com/png/detail/938-9383200_png-file-svg-view-report-icon-png.png" alt="View Reports icon">
+        <p>View Reports</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lower Section -->
+  <div class="bottom-section">
+    <div class="attendance-box">
+      <h3>Attendance Overview</h3>
+      <div class="chart-placeholder">
+        <p>Para daya sa chart</p>
+      </div>
+    </div>
+
+    <div class="recent-box">
+      <h3>Recent Attendance</h3>
+      <table class="recent-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Subject</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Mock Student</td>
+            <td>IT211</td>
+            <td class="present">Present</td>
+            <td>Oct 27, 2025</td>
+          </tr>
+          <tr>
+            <td>Mock Student</td>
+            <td>IT211</td>
+            <td class="absent">Absent</td>
+            <td>Oct 27, 2025</td>
+          </tr>
+          <tr>
+            <td>Mock Student</td>
+            <td>IT211</td>
+            <td class="present">Present</td>
+            <td>Oct 27, 2025</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

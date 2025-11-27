@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h2>Manage Teachers</h2>
+    <a href="#" class="add-student-btn" id="openAddTeacherModal">+ Add Teacher</a>
+  </div>
+
+  <!-- Add Teacher Modal -->
+  <div id="addTeacherModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Add Teacher</h2>
+      <form method="post" action="{% url 'accounts:add_teacher' %}">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="{{ user_form.email.id_for_label }}">Email</label>
+          {{ user_form.email }}
+        </div>
+        <div class="form-group">
+          <label for="{{ profile_form.first_name.id_for_label }}">First Name</label>
+          {{ profile_form.first_name }}
+        </div>
+        <div class="form-group">
+          <label for="{{ profile_form.middle_name.id_for_label }}">Middle Name</label>
+          {{ profile_form.middle_name }}
+        </div>
+        <div class="form-group">
+          <label for="{{ profile_form.last_name.id_for_label }}">Last Name</label>
+          {{ profile_form.last_name }}
+        </div>
+        <button type="submit" class="btn">Save Teacher</button>
+      </form>
+      {% if email and password %}
+        <p>Account created! Email: <strong>{{ email }}</strong>, Password: <strong>{{ password }}</strong></p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Teachers Table -->
+  <div class="bottom-section">
+    <div class="attendance-box">
+      <h3>Teacher List</h3>
+      <table class="recent-table">
+        <thead>
+          <tr>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for teacher in teachers %}
+          <tr>
+            <td>{{ teacher.first_name }} {% if teacher.middle_name %}{{ teacher.middle_name }} {% endif %}{{ teacher.last_name }}</td>
+            <td>{{ teacher.user.email }}</td>
+            <td>
+              <a href="#" class="edit-btn" data-target="#editModal{{ teacher.id }}">Edit</a>
+              <a href="#" class="delete-btn" data-target="#deleteModal{{ teacher.id }}">Delete</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="empty-row">No teachers found. Click "Add Teacher" to create a new profile.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Edit & Delete Modals -->
+{% for teacher in teachers %}
+<!-- Edit Modal -->
+<div id="editModal{{ teacher.id }}" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Edit Teacher</h2>
+    <form method="post" action="{% url 'accounts:edit_teacher' teacher.id %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="email_{{ teacher.id }}">Email</label>
+        <input type="email" name="email" id="email_{{ teacher.id }}" value="{{ teacher.user.email }}" required>
+      </div>
+      <div class="form-group">
+        <label for="first_name_{{ teacher.id }}">First Name</label>
+        <input type="text" name="first_name" id="first_name_{{ teacher.id }}" value="{{ teacher.first_name }}" required>
+      </div>
+      <div class="form-group">
+        <label for="middle_name_{{ teacher.id }}">Middle Name</label>
+        <input type="text" name="middle_name" id="middle_name_{{ teacher.id }}" value="{{ teacher.middle_name }}">
+      </div>
+      <div class="form-group">
+        <label for="last_name_{{ teacher.id }}">Last Name</label>
+        <input type="text" name="last_name" id="last_name_{{ teacher.id }}" value="{{ teacher.last_name }}" required>
+      </div>
+      <button type="submit" class="btn">Update Teacher</button>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal{{ teacher.id }}" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Delete Teacher</h2>
+    <p>Are you sure you want to delete <strong>{{ teacher.first_name }} {{ teacher.last_name }}</strong>?</p>
+    <form method="post" action="{% url 'accounts:delete_teacher' teacher.id %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Delete</button>
+      <button type="button" class="btn" onclick="document.getElementById('deleteModal{{ teacher.id }}').style.display='none'">Cancel</button>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+  // Open modal
+  function openModal(modal) {
+    if (!modal) return;
+    modal.style.display = "block";
+  }
+
+  // Close buttons
+  document.querySelectorAll(".close").forEach(btn => {
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      const modal = this.closest(".modal");
+      if (modal) modal.style.display = "none";
+    };
+  });
+
+  // Click outside modal
+  window.onclick = function(event) {
+    if (event.target.classList.contains("modal")) {
+      event.target.style.display = "none";
+    }
+  };
+
+  // Add Teacher button
+  const addBtn = document.getElementById("openAddTeacherModal");
+  const addModal = document.getElementById("addTeacherModal");
+  if (addBtn) {
+    addBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      openModal(addModal);
+    });
+  }
+
+  // Edit/Delete buttons
+  document.querySelectorAll(".edit-btn, .delete-btn").forEach(btn => {
+    btn.addEventListener("click", function(e) {
+      e.preventDefault();
+      const modalId = this.getAttribute("data-target").substring(1);
+      const modal = document.getElementById(modalId);
+      openModal(modal);
+    });
+  });
+
+});
+</script>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <!-- Header -->
+  <div class="dashboard-header flex justify-between items-center">
+    <h2>Manage Subjects</h2>
+    <a href="#" class="add-subject-btn" id="openModalSubject">+ Add Subject</a>
+  </div>
+
+  <!-- Add Subject Modal -->
+  <div id="subjectModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Add New Subject</h2>
+      <form method="post" action="{% url 'academics:add_subject' %}">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="{{ add_form.course.id_for_label }}">Course</label>
+          {{ add_form.course }}
+        </div>
+        <div class="form-group">
+          <label for="{{ add_form.subject_code.id_for_label }}">Subject Code</label>
+          {{ add_form.subject_code }}
+        </div>
+        <div class="form-group">
+          <label for="{{ add_form.name.id_for_label }}">Subject Name</label>
+          {{ add_form.name }}
+        </div>
+        <div class="form-group">
+          <label for="{{ add_form.semester_number.id_for_label }}">Semester</label>
+          {{ add_form.semester_number }}
+        </div>
+        <button type="submit" class="btn">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Subjects Table -->
+  <div class="bottom-section">
+    <div class="attendance-box">
+      <h3>Subject List</h3>
+      <table class="recent-table">
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Subject Code</th>
+            <th>Subject Name</th>
+            <th>Semester</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for subject in subjects %}
+          <tr>
+            <td>{{ subject.course.name }}</td>
+            <td>{{ subject.subject_code }}</td>
+            <td>{{ subject.name }}</td>
+            <td>{{ subject.semester_number }}</td>
+            <td>
+              <a href="#" class="edit-btn" data-target="#editModal{{ subject.id }}">Edit</a>
+              <a href="#" class="delete-btn" data-target="#deleteModal{{ subject.id }}">Delete</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" style="text-align:center;">No subjects found</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Edit & Delete Modals -->
+{% for subject in subjects %}
+<!-- Edit Modal -->
+<div id="editModal{{ subject.id }}" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Edit Subject</h2>
+    <form method="post" action="{% url 'academics:edit_subject' subject.id %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="course">Course</label>
+        <select name="course" class="form-control" required>
+          {% for course in courses %}
+          <option value="{{ course.id }}" {% if subject.course.id == course.id %}selected{% endif %}>
+            {{ course.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="subject_code">Subject Code</label>
+        <input type="text" name="subject_code" value="{{ subject.subject_code }}" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label for="name">Subject Name</label>
+        <input type="text" name="name" value="{{ subject.name }}" class="form-control">
+      </div>
+      <div class="form-group">
+        <label for="semester_number">Semester</label>
+        <select name="semester_number" class="form-control">
+          <option value="1st" {% if subject.semester_number == '1st' %}selected{% endif %}>1st Semester</option>
+          <option value="2nd" {% if subject.semester_number == '2nd' %}selected{% endif %}>2nd Semester</option>
+        </select>
+      </div>
+      <button type="submit" class="btn">Update Subject</button>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal{{ subject.id }}" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Delete Subject</h2>
+    <p>Are you sure you want to delete <strong>{{ subject.subject_code }}</strong>?</p>
+    <form method="post" action="{% url 'academics:delete_subject' subject.id %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Delete</button>
+      <button type="button" class="btn close-btn">Cancel</button>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+<!-- JS for Modal -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  function openModal(modal) {
+    modal.style.display = "block";
+    const closeBtn = modal.querySelector(".close, .close-btn");
+    if (closeBtn) closeBtn.onclick = () => modal.style.display = "none";
+    window.onclick = function(e) { if (e.target == modal) modal.style.display = "none"; }
+  }
+
+  const addModal = document.getElementById("subjectModal");
+  const openAddBtn = document.getElementById("openModalSubject");
+  openAddBtn.onclick = function(e) { e.preventDefault(); openModal(addModal); }
+
+  document.querySelectorAll(".edit-btn, .delete-btn").forEach(btn => {
+    btn.addEventListener("click", function(e) {
+      e.preventDefault();
+      const modal = document.querySelector(this.dataset.target);
+      if(modal) openModal(modal);
+    });
+  });
+});
+</script>
+{% endblock %}

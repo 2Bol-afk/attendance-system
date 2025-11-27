@@ -1,0 +1,361 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <div class="dashboard-header" style="margin-bottom: 30px;">
+    <h2>Edit Student</h2>
+    <p style="color: #6b7280; margin-top: 8px;">Editing: {{ student_profile.first_name }} {{ student_profile.last_name }} ({{ student_profile.student_ID }})</p>
+  </div>
+
+  <form action="{% url 'accounts:edit_student' student_profile.student_ID %}" method="post" class="edit-student-form" id="studentForm" onsubmit="return validateForm()">
+    {% csrf_token %}
+
+    <!-- Show all form errors -->
+    {% for form in forms_list %}
+      {% if form.errors %}
+        <div class="error-container">
+          <div class="error-title"><i>!</i> Please fix the errors below:</div>
+          {{ form.non_field_errors }}
+          {% for field in form %}
+            {% for error in field.errors %}
+              <div class="error-item">
+                <strong>{{ field.label }}:</strong> {{ error }}
+              </div>
+            {% endfor %}
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    <!-- Basic Info -->
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ student_form.student_ID.id_for_label }}">Student ID</label>
+        {{ student_form.student_ID }}
+      </div>
+      <div class="form-group">
+        <label for="{{ student_form.first_name.id_for_label }}">First Name</label>
+        {{ student_form.first_name }}
+      </div>
+      <div class="form-group">
+        <label for="{{ student_form.middle_name.id_for_label }}">Middle Name</label>
+        {{ student_form.middle_name }}
+      </div>
+      <div class="form-group">
+        <label for="{{ student_form.last_name.id_for_label }}">Last Name</label>
+        {{ student_form.last_name }}
+      </div>
+    </div>
+
+    <!-- Course, Year, Section, Type -->
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ student_form.course.id_for_label }}">Course</label>
+        {{ student_form.course }}
+      </div>
+      <div class="form-group">
+        <label for="{{ student_form.year.id_for_label }}">Year</label>
+        {{ student_form.year }}
+      </div>
+      <div class="form-group">
+        <label for="{{ student_form.section.id_for_label }}">Section</label>
+        {{ student_form.section }}
+      </div>
+      <div class="form-group">
+        <label for="{{ student_form.is_regular.id_for_label }}">Student Type</label>
+        {{ student_form.is_regular }}
+      </div>
+    </div>
+
+    <!-- Semester -->
+    <div class="form-row semester-row">
+      <label>Semester</label>
+      <div class="semester-options">
+        {% for value, label in student_form.fields.semester.choices %}
+          <label class="radio-label">
+            <input type="radio" name="semester" value="{{ value }}"
+                   {% if semester == value %}checked{% endif %}>
+            {{ label }}
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Subjects Table -->
+    <div class="form-row">
+      <label>Subjects</label>
+      <table class="subjects-table">
+        <thead>
+          <tr>
+            <th style="width:50px;">Select</th>
+            <th>Subject Code</th>
+            <th>Subject Name</th>
+          </tr>
+        </thead>
+        <tbody id="subject-container">
+          {% for subject in subjects %}
+            <tr>
+              <td style="text-align:center;">
+                <input type="checkbox" name="subjects" value="{{ subject.id }}"
+                       {% if subject.id in enrolled_subject_ids %}checked{% endif %}
+                       class="subject-checkbox">
+              </td>
+              <td>{{ subject.subject_code }}</td>
+              <td>{{ subject.name }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Parent Section -->
+    <h3>Parent Information</h3>
+
+    <!-- Current Parent(s) Display -->
+    {% if current_parents %}
+      <div class="current-parents-display">
+        <label>Current Parent(s):</label>
+        <div class="parent-list">
+          {% for parent in current_parents %}
+            <div class="parent-card">
+              <div class="parent-info">
+                <strong>{{ parent.first_name }} {{ parent.middle_name }} {{ parent.last_name }}</strong><br>
+                <span style="color: #6b7280; font-size: 14px;">📞 {{ parent.contact_number }}</span><br>
+                <span style="color: #6b7280; font-size: 14px;">✉️ {{ parent.user.email }}</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">
+          <strong>Note:</strong> To edit parent details (name, contact), please use the Parent Management page.
+          Here you can only change which parent is linked to this student.
+        </p>
+      </div>
+    {% endif %}
+
+    <!-- Change Parent Options -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>Change Parent Assignment</label>
+        <div class="parent-change-options">
+          <label class="radio-label">
+            <input type="radio" name="parent_action" value="keep" checked>
+            Keep current parent(s)
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="parent_action" value="change">
+            Link to different existing parent
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="parent_action" value="add">
+            Add a new parent account
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search & Select Existing Parent (Hidden by default) -->
+    <div id="change_parent_section" style="display:none;">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="parent_search">Search Existing Parent</label>
+          <input type="text" id="parent_search" placeholder="Type to search..." autocomplete="off" class="input-field">
+
+          <select id="parent_select" name="parent_select" size="5" class="select-field mt-2">
+            <option value="">-- Select Existing Parent --</option>
+            {% for parent in parents %}
+              <option value="{{ parent.id }}">
+                {{ parent.first_name }} {{ parent.middle_name }} {{ parent.last_name }} - {{ parent.contact_number }} - {{ parent.user.email }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Parent Inputs (Hidden by default) -->
+    <div id="new_parent_inputs" style="display:none;">
+      <input type="hidden" name="create_new_parent" id="create_new_parent" value="false">
+      <div class="alert-info" style="margin-bottom: 15px;">
+        <strong>ℹ️ Creating New Parent Account:</strong>
+        <ul style="margin: 8px 0 0 20px; font-size: 14px;">
+          <li>A login account will be automatically created</li>
+          <li>Email will be auto-generated: firstname.lastname@parent.isufst.com</li>
+          <li>A temporary password will be sent (they'll change it on first login)</li>
+        </ul>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="{{ parent_profile_form.first_name.id_for_label }}">First Name</label>
+          {{ parent_profile_form.first_name }}
+        </div>
+        <div class="form-group">
+          <label for="{{ parent_profile_form.middle_name.id_for_label }}">Middle Name</label>
+          {{ parent_profile_form.middle_name }}
+        </div>
+        <div class="form-group">
+          <label for="{{ parent_profile_form.last_name.id_for_label }}">Last Name</label>
+          {{ parent_profile_form.last_name }}
+        </div>
+        <div class="form-group">
+          <label for="{{ parent_profile_form.contact_number.id_for_label }}">Contact Number</label>
+          {{ parent_profile_form.contact_number }}
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row action-buttons">
+      <a href="{% url 'accounts:manage_student' %}" class="btn-cancel">Cancel</a>
+      <button type="submit" class="btn-save">Update Student</button>
+    </div>
+
+  </form>
+
+</div>
+
+<!-- Scripts -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const parentActionRadios = document.querySelectorAll('input[name="parent_action"]');
+  const changeParentSection = document.getElementById('change_parent_section');
+  const newParentDiv = document.getElementById('new_parent_inputs');
+  const parentSelect = document.getElementById('parent_select');
+  const searchInput = document.getElementById('parent_search');
+  const createNewParentInput = document.getElementById('create_new_parent');
+
+  function toggleParentFields(enable) {
+    const inputs = newParentDiv.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+      if(input.id === 'create_new_parent') return;
+      if(enable) {
+        input.removeAttribute('disabled');
+        input.setAttribute('required','required');
+      } else {
+        input.removeAttribute('required');
+        input.setAttribute('disabled','disabled');
+        input.value='';
+      }
+    });
+  }
+
+  parentActionRadios.forEach(radio => {
+    radio.addEventListener('change', function() {
+      if(this.value === 'keep') {
+        changeParentSection.style.display = 'none';
+        newParentDiv.style.display = 'none';
+        toggleParentFields(false);
+        parentSelect.value = '';
+        createNewParentInput.value = 'false';
+      } else if(this.value === 'change') {
+        changeParentSection.style.display = 'block';
+        newParentDiv.style.display = 'none';
+        toggleParentFields(false);
+        createNewParentInput.value = 'false';
+      } else if(this.value === 'add') {
+        changeParentSection.style.display = 'none';
+        newParentDiv.style.display = 'block';
+        toggleParentFields(true);
+        parentSelect.value = '';
+        createNewParentInput.value = 'true';
+      }
+    });
+  });
+
+  // Initialize parent action state
+  const checkedRadio = document.querySelector('input[name="parent_action"]:checked');
+  if(checkedRadio) checkedRadio.dispatchEvent(new Event('change'));
+
+  if(searchInput){
+    searchInput.addEventListener('input', function(){
+      const filter = this.value.toLowerCase();
+      for(let i=0;i<parentSelect.options.length;i++){
+        const option = parentSelect.options[i];
+        option.style.display = option.text.toLowerCase().includes(filter)?'':'none';
+      }
+    });
+  }
+
+  // --- Subject selection logic for Regular/Irregular ---
+  let manualSelections = new Set();
+  const subjectCheckboxes = document.querySelectorAll('.subject-checkbox');
+  const studentTypeSelect = document.getElementById('id_is_regular');
+
+  function updateSubjects() {
+    const isRegular = studentTypeSelect.value === 'reg';
+    subjectCheckboxes.forEach(cb => {
+      const id = parseInt(cb.value);
+      if(isRegular) {
+        cb.checked = true;
+      } else {
+        cb.checked = manualSelections.has(id);
+      }
+    });
+  }
+
+  // Track manual changes
+  subjectCheckboxes.forEach(cb => {
+    cb.addEventListener('change', function() {
+      const id = parseInt(this.value);
+      if(this.checked) manualSelections.add(id);
+      else manualSelections.delete(id);
+    });
+  });
+
+  // On change of student type
+  studentTypeSelect.addEventListener('change', function() {
+    if(this.value === 'irreg') manualSelections.clear();
+    updateSubjects();
+  });
+
+  // Initial call to set subjects correctly on page load
+  updateSubjects();
+});
+</script>
+
+
+
+<!-- Styles -->
+<style>
+.edit-student-form .form-row{display:flex;flex-wrap:wrap;gap:20px;margin-bottom:20px;}
+.edit-student-form .form-group{flex:1;display:flex;flex-direction:column;}
+.edit-student-form label{font-weight:500;margin-bottom:5px;color:#111827;}
+.edit-student-form input[type="text"],.edit-student-form select{padding:10px;border-radius:8px;border:1px solid #ccc;font-size:14px;outline:none;transition:0.3s;}
+.edit-student-form input[type="text"]:focus,.edit-student-form select:focus{border-color:#4f46e5;box-shadow:0 0 5px rgba(79,70,229,0.3);}
+.semester-options{display:flex;gap:15px;margin-top:5px;}
+.radio-label input[type="radio"]{margin-right:5px;}
+.subjects-table{width:100%;border-collapse:collapse;margin-top:10px;}
+.subjects-table th,.subjects-table td{border:1px solid #ddd;padding:10px;text-align:left;}
+.subjects-table th{background-color:#f3f4f6;font-weight:600;}
+.subjects-table tr:nth-child(even){background-color:#fafafa;}
+.btn-save,.btn-secondary,.btn-cancel{padding:12px 25px;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:0.3s;text-decoration:none;display:inline-block;}
+.btn-save{background-color:#4f46e5;}
+.btn-save:hover{background-color:#4338ca;}
+.btn-cancel{background-color:#9ca3af;}
+.btn-cancel:hover{background-color:#6b7280;}
+.btn-secondary{background-color:#6b7280;}
+.btn-secondary:hover{background-color:#4b5563;}
+.action-buttons{justify-content:flex-end;gap:10px;}
+.error-container{background:#fff4f4;border-left:5px solid #e11d48;padding:15px 18px;border-radius:6px;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,0.05);}
+.error-title{color:#b91c1c;font-weight:bold;font-size:16px;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.error-title i{font-style:normal;background:#b91c1c;color:white;border-radius:50%;width:20px;height:20px;text-align:center;line-height:20px;font-size:13px;}
+.error-item{background:#ffe6e6;padding:8px 12px;border-radius:5px;margin-bottom:6px;color:#7f1d1d;border:1px solid #f2b6b6;font-size:14px;}
+.input-field,.select-field{width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;font-size:14px;outline:none;transition:0.3s;margin-top:5px;}
+.input-field:focus,.select-field:focus{border-color:#4f46e5;box-shadow:0 0 5px rgba(79,70,229,0.3);}
+.select-field{height:150px;}
+.mt-2{margin-top:8px;}
+.mt-3{margin-top:12px;}
+.current-parents-display{margin-bottom:20px;padding:15px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;}
+.current-parents-display label{display:block;font-weight:600;margin-bottom:10px;color:#111827;}
+.parent-list{display:flex;flex-wrap:wrap;gap:12px;}
+.parent-card{background:white;padding:12px 16px;border-radius:6px;border:1px solid #d1d5db;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.parent-change-options{display:flex;flex-direction:column;gap:10px;margin-top:8px;}
+.parent-change-options .radio-label{display:flex;align-items:center;padding:10px;border:2px solid #e5e7eb;border-radius:6px;cursor:pointer;transition:0.3s;}
+.parent-change-options .radio-label:hover{background:#f9fafb;border-color:#4f46e5;}
+.parent-change-options input[type="radio"]{margin-right:10px;}
+.parent-change-options .radio-label:has(input:checked){background:#eef2ff;border-color:#4f46e5;font-weight:600;}
+.alert-info{background:#eff6ff;border-left:4px solid #3b82f6;padding:12px 16px;border-radius:6px;color:#1e40af;}
+</style>
+
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h2>Manage Students</h2>
+    <a href="{% url 'accounts:add_student' %}" class="add-student-btn">+ Add Student</a>
+  </div>
+
+  <!-- Students Table -->
+  <div class="attendance-box">
+    <table class="recent-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Course</th>
+          <th>Year</th>
+          <th>Section</th>
+          <th>Student Type</th>
+          <th>Subjects</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for student in students %}
+        <tr>
+          <td>{{ student.student_ID }}</td>
+          <td>{{ student.first_name }} {{ student.middle_name }} {{ student.last_name }}</td>
+          <td>{{ student.course.name|default:"N/A" }}</td>
+          <td>{{ student.year }}</td>
+          <td>{{ student.section }}</td>
+          <td>
+            {% if student.is_regular == 'reg' %}
+              Regular
+            {% elif student.is_regular == 'irreg' %}
+              Irregular
+            {% else %}
+              {{ student.is_regular }}
+            {% endif %}
+          </td>
+          <td>
+            {% with student.subjects.all as subjects %}
+              {% if subjects %}
+                <ul style="margin:0; padding-left: 15px;">
+                  {% for subject in subjects %}
+                    <li>{{ subject.subject_code }} - {{ subject.name }}</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <span style="color: #9ca3af;">No subjects</span>
+              {% endif %}
+            {% endwith %}
+          </td>
+          <td>
+            <a href="javascript:void(0);" 
+   onclick="window.location.href='{% url 'accounts:edit_student' student.student_ID %}'; event.stopPropagation();" 
+   class="edit-btn">Edit</a>
+
+
+            <a href="javascript:void(0);" 
+   class="delete-btn"
+   onclick="if(confirm('Are you sure you want to delete {{ student.first_name }} {{ student.last_name }}?')) { window.location.href='{% url 'accounts:delete_student' student.student_ID %}'; }">
+   Delete
+</a>
+
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="empty-row">No students found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.add-student-btn {
+  background-color: #4f46e5;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.add-student-btn:hover {
+  background-color: #4338ca;
+}
+
+.attendance-box {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.recent-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.recent-table thead th {
+  background-color: #f3f4f6;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #111827;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.recent-table tbody td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #374151;
+}
+
+.recent-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.edit-btn, .delete-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  margin-right: 8px;
+  display: inline-block;
+  transition: 0.3s;
+}
+
+.edit-btn {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #2563eb;
+}
+
+.delete-btn {
+  background-color: #ef4444;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #dc2626;
+}
+
+.empty-row {
+  text-align: center;
+  color: #9ca3af;
+  padding: 40px !important;
+  font-style: italic;
+}
+</style>
+
+{% endblock %}
