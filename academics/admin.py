@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Subject, Course, Semester, SubjectOffering
+from .models import Subject, Course, Semester, SubjectOffering,Attendance
 
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
@@ -20,3 +20,7 @@ class SubjectOfferingAdmin(admin.ModelAdmin):
     list_filter = ('year','school_year', 'teacher')
     search_fields = ('subject__subject_code', 'teacher__first_name', 'teacher__last_name')
 
+@admin.register(Attendance)
+class AttendanceAdmin(admin.ModelAdmin):
+    list_display = ('student','subject_offering','status','time','date')
+    

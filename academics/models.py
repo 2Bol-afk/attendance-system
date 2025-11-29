@@ -48,7 +48,6 @@ class SubjectOffering(models.Model):
     def __str__(self):
         return f"{self.subject.subject_code} - {self.school_year} - {self.year}"
 
-# models.py
 
 
 class Attendance(models.Model):

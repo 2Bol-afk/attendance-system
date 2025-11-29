@@ -16,7 +16,7 @@
         <img src="{% static 'images/studentlogo.jpg' %}" alt="Student Icon">
       </div>
       <div class="stat-info">
-        <h3>245</h3>
+        <h3>{{ total_students }}</h3>
         <p>Total Students</p>
         <a href="{% url 'accounts:manage_student' %}" class="view-link">View all</a>
       </div>
@@ -27,7 +27,7 @@
         <img src="{% static 'images/teacherlogo.jpg' %}" alt="Teacher Icon">
       </div>
       <div class="stat-info">
-        <h3>15</h3>
+        <h3>{{ total_teachers }}</h3>
         <p>Total Teachers</p>
         <a href="{% url 'accounts:manage_teacher' %}" class="view-link">View all</a>
       </div>
@@ -38,7 +38,7 @@
         <img src="{% static 'images/family.png' %}" alt="Parent Icon">
       </div>
       <div class="stat-info">
-        <h3>230</h3>
+        <h3> {{ total_parents }} </h3>
         <p>Total Parents</p>
         <a href="{% url 'accounts:manage_parent' %}" class="view-link">View all</a>
       </div>
@@ -49,9 +49,8 @@
         <img src="{% static 'images/book.png' %}" alt="Subject Icon">
       </div>
       <div class="stat-info">
-        <h3>12</h3>
+        <h3>{{ total_subjects }}</h3>
         <p>Total Subjects</p>
-        
         <a href="{% url 'academics:manage_subjects' %}" class="view-link">View all</a>
       </div>
     </div>
@@ -82,47 +81,121 @@
 
   <!-- Lower Section -->
   <div class="bottom-section">
-    <div class="attendance-box">
+    <div class="attendance-box" id="chart-section">
       <h3>Attendance Overview</h3>
-      <div class="chart-placeholder">
-        <p>Para daya sa chart</p>
+
+      <form method="GET" id="filterForm" style="margin-bottom:15px; display:flex; gap:10px; align-items:center;">
+        <label>Year:</label>
+        <select name="year" onchange="submitWithHash()" style="padding:5px 8px;">
+          {% for y in years %}
+            <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>
+              {{ y }} Year
+            </option>
+          {% endfor %}
+        </select>
+
+        <label>Subject:</label>
+        <select name="subject" onchange="submitWithHash()" style="padding:5px 8px;">
+          {% for id, code in subjects %}
+            <option value="{{ id }}" {% if id == selected_subject_id %}selected{% endif %}>
+              {{ code }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+
+      <!-- Pie Chart -->
+      <div class="pie-chart-container">
+        <canvas id="attendancePieChart"></canvas>
       </div>
     </div>
 
-    <div class="recent-box">
-      <h3>Recent Attendance</h3>
-      <table class="recent-table">
-        <thead>
+<div class="recent-box">
+  <h3>Recent Attendance</h3>
+  <table class="recent-table">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Subject</th>
+        <th>Status</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if recent_attendance_list %}
+        {% for attendance in recent_attendance_list %}
           <tr>
-            <th>Student</th>
-            <th>Subject</th>
-            <th>Status</th>
-            <th>Date</th>
+            <td>{{ attendance.student.first_name }} {{ attendance.student.last_name }}</td>
+            <td>{{ attendance.subject_offering.subject.name }}</td>
+            <td class="{% if attendance.status == 'present' %}present{% elif attendance.status == 'absent' %}absent{% else %}late{% endif %}">
+              {{ attendance.get_status_display }}
+            </td>
+            <td>{{ attendance.date|date:"M d, Y" }}</td>
           </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Mock Student</td>
-            <td>IT211</td>
-            <td class="present">Present</td>
-            <td>Oct 27, 2025</td>
-          </tr>
-          <tr>
-            <td>Mock Student</td>
-            <td>IT211</td>
-            <td class="absent">Absent</td>
-            <td>Oct 27, 2025</td>
-          </tr>
-          <tr>
-            <td>Mock Student</td>
-            <td>IT211</td>
-            <td class="present">Present</td>
-            <td>Oct 27, 2025</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="4">No attendance records found.</td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Create the chart
+const pieData = {
+    labels: ['Present', 'Absent', 'Late'],
+    datasets: [{
+        data: [
+            {{ attendance_data.present }},
+            {{ attendance_data.absent }},
+            {{ attendance_data.late }}
+        ],
+        backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56']
+    }]
+};
+
+new Chart(document.getElementById('attendancePieChart'), {
+    type: 'pie',
+    data: pieData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Function to submit form and add hash to URL
+function submitWithHash() {
+    const form = document.getElementById('filterForm');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    
+    // Add hash to maintain scroll position
+    window.location.href = '?' + params.toString() + '#chart-section';
+}
+
+// Scroll to chart section if hash exists
+window.addEventListener('DOMContentLoaded', () => {
+    if (window.location.hash === '#chart-section') {
+        const chartSection = document.getElementById('chart-section');
+        if (chartSection) {
+            // Small delay to ensure page is fully loaded
+            setTimeout(() => {
+                chartSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }
+});
+</script>
 {% endblock %}

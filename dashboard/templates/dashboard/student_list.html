@@ -1,0 +1,54 @@
+{% extends 'teacherbase.html' %}
+{% block content %}
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h2>Student List</h2>
+  </div>
+
+  <!-- Filter by Offering -->
+  <form method="get" style="margin-bottom:20px;">
+    <label for="offering">Filter by Subject Offering:</label>
+    <select name="offering" id="offering" onchange="this.form.submit()" style="padding:6px 12px; border-radius:6px; border:1px solid #ccc;">
+      <option value="">All</option>
+      {% for offer in offerings %}
+        <option value="{{ offer.id }}" {% if offer.id|stringformat:"s" == selected_offering %}selected{% endif %}>
+          {{ offer.subject.subject_code }} - {{ offer.year }} - {{ offer.school_year }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <div class="attendance-box">
+    <table class="recent-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Section</th>
+          <th>Year</th>
+          <th>Subjects</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if students %}
+          {% for student in students %}
+          <tr>
+            <td>{{ student.first_name }} {{ student.last_name }}</td>
+            <td>{{ student.section }}</td>
+            <td>{{ student.year }}</td>
+            <td>
+              {% for subject in student.subjects.all %}
+                {{ subject.subject_code }}{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="4" class="empty-row">No students found.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

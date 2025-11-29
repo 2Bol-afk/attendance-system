@@ -1,95 +1,148 @@
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: "Poppins", sans-serif;
-    }
-
-    body {
-      background-color: #f5f6fa;
-      display: flex;
-      height: 100vh;
-      color: #fff;
-    }
 
 
-    /* SIDEBAR */
-    .left-container {
-      width: 260px;
-      background-color: #1f2430;
-      padding: 25px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 25px;
-      border-radius: 20px;
-      margin-top: 10px;
-      margin-bottom: 10px;
-      margin-left: 10px;
-    }
+/* RESET & BASE */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-    .left-container h1 {
-      font-size: 1.6rem;
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: #f8fafc;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
 
-    .left-container h5 {
-      font-weight: 500;
-      color: #bbb;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.95rem;
-    }
+/* SIDEBAR - FIXED POSITION */
+.left-container {
+  width: 280px;
+  background-color: #1f2430;
+  padding: 25px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  position: fixed;      /* ← ADD THIS */
+  top: 0;               /* ← ADD THIS */
+  left: 0;              /* ← ADD THIS */
+  height: 100vh;        /* ← ADD THIS */
+  overflow-y: auto;     /* ← ADD THIS */
+  z-index: 1000;        /* ← ADD THIS */
+  /* NO margin, NO border-radius for fixed sidebar */
+}
 
-    .left-container svg {
-      width: 20px;
-      height: 20px;
-      fill: #9ca3af;
-    }
+.left-container h1 {
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
 
-    /* MENU SECTION */
-    .menu {
-      display: flex;
-      flex-direction: column;
-      margin-top: 20px;
-    }
+/* MENU SECTION */
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-    .menu a {
-      color: #ccc;
-      text-decoration: none;
-      padding: 10px 15px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      transition: 0.3s;
-    }
+.menu h5 {
+  color: #8b92a8;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  padding-left: 12px;
+}
 
-    .menu a:hover,
-    .menu a.active {
-      background-color: #2e3446;
-      color: #fff;
-    }
+.menu a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: #a0aec0;
+  text-decoration: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
 
-    /* ICONS */
-    .menu svg {
-      width: 22px;
-      height: 22px;
-      fill: #9ca3af;
-    }
+.menu a:hover {
+  background-color: #2a3241;
+  color: #ffffff;
+}
 
-    /* For demo placeholder main content */
-    .main-content {
-      flex: 1;
-      background-color: #f8fafc;
-      color: #000;
-      padding: 30px;
-    }
+.menu a.active {
+  background-color: #3b82f6;
+  color: #ffffff;
+}
+
+.menu a svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* MAIN CONTENT - WITH LEFT MARGIN */
+.main-content {
+  margin-left: 280px;
+  padding: 30px;
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+/* SCROLLBAR STYLING FOR SIDEBAR */
+.left-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.left-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.left-container::-webkit-scrollbar-thumb {
+  background: #3a4456;
+  border-radius: 10px;
+}
+
+.left-container::-webkit-scrollbar-thumb:hover {
+  background: #4a5568;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 1024px) {
+  .left-container {
+    width: 240px;
+  }
+  
+  .main-content {
+    margin-left: 240px;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .left-container {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+  
+  .main-content {
+    margin-left: 0;
+    padding: 15px;
+  }
+}
+
+/* Rest of your CSS below... */
 .dashboard-container {
   padding: 30px;
   font-family: 'Poppins', sans-serif;
 }
+
+/* ... (keep all the rest of your existing CSS) ... */
 
 /* Header */
 .dashboard-header {
@@ -441,3 +494,20 @@
     border: 1px solid #f2b6b6;
     font-size: 14px;
   }
+  /* Pie chart adjustments */
+.attendance-box canvas#attendancePieChart {
+  max-width: 300px;
+  max-height: 300px;
+  margin: 0 auto;
+  display: block;
+}
+
+.pie-chart-container {
+    width: 300px;   /* fixed width */
+    height: 300px;  /* fixed height */
+    margin: 0 auto; /* center horizontally */
+}
+.pie-chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+}

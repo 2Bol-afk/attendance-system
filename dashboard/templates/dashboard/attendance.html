@@ -1,42 +1,234 @@
 {% extends 'teacherbase.html' %}
+{% load static %}
 
 {% block content %}
-<div class="dashboard-container">
-  <div class="dashboard-header">
-    <h2>Attendance</h2>
+<style>
+  /* Attendance Page UI Improvements */
+  .attendance-container {
+    padding: 30px;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  /* Header */
+  .attendance-header {
+    background: #1f2937;
+    color: #fff;
+    padding: 25px 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .attendance-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    align-items: center;
+  }
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+  }
+  .legend .present-dot { color: green; }
+  .legend .absent-dot { color: red; }
+  .legend .late-dot { color: orange; }
+
+  /* Filters Card */
+  .filters-card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+  }
+  .filters-card select,
+  .filters-card input[type="date"],
+  .filters-card input[type="time"] {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    min-width: 150px;
+  }
+
+  /* Attendance Table */
+  .attendance-box {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 20px;
+  }
+  .attendance-box table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .attendance-box th, .attendance-box td {
+    border-bottom: 1px solid #ddd;
+    padding: 12px 10px;
+    text-align: left;
+  }
+
+  /* Attendance radio buttons - horizontal compact */
+.attendance-options {
+  display: flex;
+  gap: 15px; /* space between buttons */
+  align-items: center;
+}
+
+.attendance-options label {
+  display: flex;
+  align-items: center;
+  gap: 4px; /* smaller gap between dot and text */
+  padding: 4px 8px; /* smaller padding */
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px; /* smaller font to fit horizontally */
+  transition: background 0.2s;
+}
+
+.attendance-options input[type="radio"] {
+  transform: scale(1); /* smaller radio button */
+  cursor: pointer;
+}
+
+.attendance-options label.present { color: green; }
+.attendance-options label.absent { color: red; }
+.attendance-options label.late { color: orange; }
+
+.attendance-options label:hover {
+  background: #f3f4f6;
+}
+
+
+  /* Save button */
+  .save-btn {
+    background-color: #1d4ed8;
+    color: #fff;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background 0.3s;
+  }
+  .save-btn:hover {
+    background-color: #1e40af;
+  }
+
+  .empty-row {
+    text-align: center;
+    color: #888;
+    padding: 20px 0;
+    font-size: 14px;
+  }
+</style>
+
+<div class="attendance-container">
+
+  <div class="attendance-header">
+    <h2>Mark Attendance</h2>
   </div>
 
-  <div class="attendance-box">
-    <table class="recent-table">
-      <thead>
-        <tr>
-          <th>Student Name</th>
-          <th>Section</th>
-          <th>Status</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for student in students %}
-        <tr>
-          <td>{{ student.full_name }}</td>
-          <td>{{ student.section }}</td>
-          <td>
-            {% if student.present_today %}
-              <span class="present">Present</span>
-            {% else %}
-              <span class="absent">Absent</span>
-            {% endif %}
-          </td>
-          <td>
-            <a href="{% url 'teacher:mark_attendance' student.id %}" class="edit-btn">Mark</a>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4" class="empty-row">No students found.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <!-- Legend -->
+  <div class="legend">
+    <span class="present-dot">● Present</span>
+    <span class="absent-dot">● Absent</span>
+    <span class="late-dot">● Late</span>
   </div>
+
+  <!-- Filters -->
+  <form method="get" class="filters-card">
+    <select name="offering" onchange="this.form.submit()">
+      <option value="">--Select Subject--</option>
+      {% for offering in offerings %}
+        <option value="{{ offering.id }}" {% if selected_offering and offering.id == selected_offering.id %}selected{% endif %}>
+          {{ offering.subject.subject_code }} - {{ offering.year }} - {{ offering.school_year }}
+        </option>
+      {% endfor %}
+    </select>
+
+    {% if selected_offering %}
+      <select name="section" onchange="this.form.submit()">
+        <option value="">--Filter by Section--</option>
+        {% for sec in sections %}
+          <option value="{{ sec }}" {% if sec == selected_section %}selected{% endif %}>{{ sec }}</option>
+        {% endfor %}
+      </select>
+
+      <select name="year" onchange="this.form.submit()">
+        <option value="">--Filter by Year--</option>
+        {% for y in years %}
+          <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+
+      <input type="date" name="date" value="{{ selected_date }}" onchange="this.form.submit()">
+      <input type="time" name="time" value="{{ selected_time }}" onchange="this.form.submit()">
+    {% endif %}
+  </form>
+
+  {% if not selected_date or not selected_time %}
+    <div class="error-box">Please select both a date and a time to mark attendance.</div>
+  {% endif %}
+
+  {% if students %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="attendance-box">
+      <table>
+        <thead>
+          <tr class="bg-gray-100">
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Attendance</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+          <tr>
+            <td>{{ student.student_ID }}</td>
+            <td>{{ student.first_name }} {{ student.last_name }}</td>
+            <td class="attendance-options">
+  <label class="present">
+    <input type="radio" name="status_{{ student.student_ID }}" value="present" required
+      {% if student.attendance_status == 'present' %}checked{% endif %}> Present
+  </label>
+  <label class="absent">
+    <input type="radio" name="status_{{ student.student_ID }}" value="absent"
+      {% if student.attendance_status == 'absent' %}checked{% endif %}> Absent
+  </label>
+  <label class="late">
+    <input type="radio" name="status_{{ student.student_ID }}" value="late"
+      {% if student.attendance_status == 'late' %}checked{% endif %}> Late
+  </label>
+</td>
+
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="mt-4">
+        <button type="submit" class="save-btn">Save Attendance</button>
+      </div>
+    </div>
+  </form>
+  {% else %}
+    <div class="empty-row">No students found for the selected filters.</div>
+  {% endif %}
+
 </div>
 {% endblock %}

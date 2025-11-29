@@ -1,34 +1,37 @@
 {% extends 'teacherbase.html' %}
-
 {% block content %}
 <div class="dashboard-container">
   <div class="dashboard-header">
-    <h2>Subject Assign</h2>
-    <a href="{% url 'teacher:add_subject' %}" class="add-subject-btn">Add Subject</a>
+    <h2>Assigned Subjects</h2>
   </div>
 
   <div class="attendance-box">
     <table class="recent-table">
       <thead>
         <tr>
+          <th>Subject Code</th>
           <th>Subject Name</th>
-          <th>Section</th>
-          <th>Actions</th>
+          <th>Course</th>
+          <th>Year</th>
+          <th>School Year</th>
         </tr>
       </thead>
       <tbody>
-        {% for subject in subjects %}
-        <tr>
-          <td>{{ subject.name }}</td>
-          <td>{{ subject.section }}</td>
-          <td>
-            <a href="{% url 'teacher:edit_subject' subject.id %}" class="edit-btn">Edit</a>
-            <a href="{% url 'teacher:delete_subject' subject.id %}" class="delete-btn">Delete</a>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="3" class="empty-row">No subjects found.</td></tr>
-        {% endfor %}
+        {% if offerings %}
+          {% for offer in offerings %}
+          <tr>
+            <td>{{ offer.subject.subject_code }}</td>
+            <td>{{ offer.subject.name }}</td>
+            <td>{{ offer.subject.course.name }}</td>
+            <td>{{ offer.year }}</td>
+            <td>{{ offer.school_year }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="5" class="empty-row">No subjects assigned.</td>
+          </tr>
+        {% endif %}
       </tbody>
     </table>
   </div>

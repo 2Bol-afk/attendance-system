@@ -6,26 +6,331 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Teacher Dashboard</title>
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+  <!-- Additional Internal CSS for improvements -->
+  <style>
+    /* Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f8fafc;
+      min-height: 100vh;
+    }
+
+    /* ---------------- Sidebar - FIXED POSITION ---------------- */
+    .left-container {
+      width: 280px;
+      background-color: #1f2430;
+      padding: 25px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+    .left-container h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 5px;
+    }
+
+    .left-container h5 {
+      font-weight: 500;
+      color: #8b92a8;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+
+    /* Menu */
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .menu a {
+      color: #a0aec0;
+      text-decoration: none;
+      padding: 12px 16px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      font-weight: 500;
+      font-size: 15px;
+    }
+
+    .menu a:hover {
+      background-color: #2a3241;
+      color: #ffffff;
+    }
+
+    .menu a.active {
+      background-color: #3b82f6;
+      color: #ffffff;
+    }
+
+    .menu a svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    /* Scrollbar for sidebar */
+    .left-container::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .left-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .left-container::-webkit-scrollbar-thumb {
+      background: #3a4456;
+      border-radius: 10px;
+    }
+
+    .left-container::-webkit-scrollbar-thumb:hover {
+      background: #4a5568;
+    }
+
+    /* Main content adjusts to sidebar width */
+    .main-content {
+      margin-left: 280px;
+      padding: 30px;
+      background-color: #f8fafc;
+      min-height: 100vh;
+      color: #000;
+    }
+
+    /* Dashboard Header */
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #000;
+      color: #fff;
+      padding: 25px 30px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .dashboard-header h2 {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    /* Table Styling */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 14px;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f3f4f6;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    tr:hover {
+      background-color: #f9fafb;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-add {
+      background-color: #1d4ed8;
+      color: #fff;
+    }
+
+    .btn-add:hover {
+      background-color: #1e40af;
+    }
+
+    .btn-edit {
+      background-color: #16a34a;
+      color: #fff;
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    .btn-edit:hover {
+      background-color: #15803d;
+    }
+
+    .btn-delete {
+      background-color: #dc2626;
+      color: #fff;
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    .btn-delete:hover {
+      background-color: #b91c1c;
+    }
+
+    /* Filters / Dropdowns */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+
+    .filters label {
+      font-weight: 500;
+      color: #374151;
+    }
+
+    .filters select {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+      min-width: 150px;
+      background-color: #fff;
+      cursor: pointer;
+    }
+
+    .filters select:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    /* Content Cards */
+    .content-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    .content-card h3 {
+      margin-bottom: 15px;
+      font-size: 20px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    /* Responsive */
+    @media(max-width: 1024px) {
+      .left-container {
+        width: 240px;
+      }
+
+      .main-content {
+        margin-left: 240px;
+        padding: 20px;
+      }
+    }
+
+    @media(max-width: 768px) {
+      .left-container {
+        width: 100%;
+        height: auto;
+        position: relative;
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 15px;
+      }
+
+      .dashboard-header {
+        padding: 20px;
+      }
+
+      .dashboard-header h2 {
+        font-size: 22px;
+      }
+
+      .filters {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .filters select {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
 
   <!-- Sidebar -->
   <div class="left-container">
-    <h1>Teacher Dashboard</h1>
+    <h1>Teacher</h1>
     <h5>Welcome, {{ request.user.first_name }}</h5>
     
     <div class="menu">
-      <a href="#" class="{% if request.path == '/teacher/' %}active{% endif %}">
-        <svg><!-- dashboard icon --></svg> Home
+      <a href="{% url 'dashboard:teacher_dashboard' %}" class="{% if request.path == '/teacher/' %}active{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" />
+          <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" />
+        </svg>
+        Home
       </a>
-      <a href="# class="{% if request.path == '/teacher/attendance/' %}active{% endif %}">
-        <svg><!-- attendance icon --></svg> Attendance
+      <a href="{% url 'academics:attendance' %}" class="{% if request.path == '/teacher/attendance/' %}active{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path fill-rule="evenodd" d="M7.502 6h7.128A3.375 3.375 0 0118 9.375v9.375a3 3 0 003-3V6.108c0-1.505-1.125-2.811-2.664-2.94a48.972 48.972 0 00-.673-.05A3 3 0 0015 1.5h-1.5a3 3 0 00-2.663 1.618c-.225.015-.45.032-.673.05C8.662 3.295 7.554 4.542 7.502 6zM13.5 3A1.5 1.5 0 0012 4.5h4.5A1.5 1.5 0 0015 3h-1.5z" clip-rule="evenodd" />
+          <path fill-rule="evenodd" d="M3 9.375C3 8.339 3.84 7.5 4.875 7.5h9.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-9.75A1.875 1.875 0 013 20.625V9.375zm9.586 4.594a.75.75 0 00-1.172-.938l-2.476 3.096-.908-.907a.75.75 0 00-1.06 1.06l1.5 1.5a.75.75 0 001.116-.062l3-3.75z" clip-rule="evenodd" />
+        </svg>
+        Attendance
       </a>
-      <a href="#" class="{% if request.path == '/teacher/subject-assign/' %}active{% endif %}">
-        <svg><!-- subject icon --></svg> Subject Assign
+      <a href="{% url 'academics:subject_assign' %}" class="{% if request.path == '/teacher/subject-assign/' %}active{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M11.25 4.533A9.707 9.707 0 006 3a9.735 9.735 0 00-3.25.555.75.75 0 00-.5.707v14.25a.75.75 0 001 .707A8.237 8.237 0 016 18.75c1.995 0 3.823.707 5.25 1.886V4.533zM12.75 20.636A8.214 8.214 0 0118 18.75c.966 0 1.89.166 2.75.47a.75.75 0 001-.708V4.262a.75.75 0 00-.5-.707A9.735 9.735 0 0018 3a9.707 9.707 0 00-5.25 1.533v16.103z" />
+        </svg>
+        Subject Assign
       </a>
-      <a href="#" class="{% if request.path == '/teacher/student-list/' %}active{% endif %}">
-        <svg><!-- student icon --></svg> Student List
+      <a href="{% url 'academics:student_list' %}" class="{% if request.path == '/teacher/student-list/' %}active{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4.5 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM14.25 8.625a3.375 3.375 0 116.75 0 3.375 3.375 0 01-6.75 0zM1.5 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM17.25 19.128l-.001.144a2.25 2.25 0 01-.233.96 10.088 10.088 0 005.06-1.01.75.75 0 00.42-.643 4.875 4.875 0 00-6.957-4.611 8.586 8.586 0 011.71 5.157v.003z" />
+        </svg>
+        Student List
       </a>
     </div>
   </div>
@@ -33,6 +338,7 @@
   <!-- Main Content -->
   <div class="main-content">
     {% block content %}
+    <!-- Dynamic page content goes here -->
     {% endblock %}
   </div>
 

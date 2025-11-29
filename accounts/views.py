@@ -523,7 +523,7 @@ def custom_login(request):
             elif user.role == 'parent':
                 return redirect('dashboard:parent_dashboard')
             else:
-                return redirect('home')
+                return redirect('accounts:login')
 
         else:
             messages.error(request, "Invalid Credentials.")
