@@ -511,3 +511,91 @@ body {
     width: 100% !important;
     height: 100% !important;
 }
+.late {
+  color: orange;
+  font-weight: 600;
+}
+.error-box {
+  background-color: #fee2e2; /* light red */
+  border-left: 5px solid #dc2626; /* red-600 */
+  padding: 12px 15px;
+  border-radius: 8px;
+  color: #b91c1c; /* red-700 */
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+.info-note {
+    background-color: #f0f8ff;
+    border-left: 4px solid #1e90ff;
+    padding: 10px;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    color: #333;
+}
+/* Nested dropdown inside sidebar */
+.menu-dropdown {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Main toggle link */
+.menu-dropdown .dropdown-toggle {
+  display: flex;
+  justify-content: space-between; /* arrow to the right */
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: #a0aec0;
+  text-decoration: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+/* Arrow styling */
+.menu-dropdown .arrow {
+  font-size: 12px;
+  transition: transform 0.3s ease;
+}
+
+/* Dropdown items - hidden by default */
+.menu-dropdown .dropdown-menu {
+  display: flex;
+  flex-direction: column;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  margin-left: 12px; /* indent inside sidebar */
+}
+
+/* Dropdown links */
+.menu-dropdown .dropdown-menu a {
+  padding: 10px 16px;
+  color: #a0aec0;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.menu-dropdown .dropdown-menu a:hover {
+  background-color: #3b82f6;
+  color: #fff;
+}
+
+/* Show dropdown on hover */
+.menu-dropdown:hover .dropdown-menu {
+  max-height: 500px; /* enough to show all items */
+}
+
+/* Rotate arrow when active */
+.menu-dropdown:hover .arrow {
+  transform: rotate(180deg);
+}
+
+/* Optional: add spacing between main menu and dropdown items */
+.menu-dropdown .dropdown-menu a + a {
+  margin-top: 4px;
+}

@@ -1,0 +1,50 @@
+{% extends 'base_parent.html' %}
+{% block title %}My Children{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <h2>My Children</h2>
+  </div>
+
+  <!-- Children Table -->
+  <div class="attendance-box">
+    <table class="recent-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Course / Year</th>
+          <th>Section</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for child in children %}
+        <tr>
+          <td>{{ child.full_name }}</td>
+          <td>
+  {% if child.course %}
+    {{ child.course.name }} - {{ child.year }}
+  {% else %}
+    N/A - {{ child.year }}
+  {% endif %}
+</td>
+
+          <td>{{ child.section }}</td>
+          <td>
+            <a href="{% url 'dashboard:student_attendance' child.student_ID %}" class="add-student-btn">View Attendance</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="empty-row">No children assigned yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

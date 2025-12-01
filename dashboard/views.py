@@ -1,15 +1,21 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect,get_object_or_404
 
 from django.utils import timezone
 from accounts.models import TeacherProfile, StudentProfile,ParentProfile
-from academics.models import SubjectOffering, Attendance
+from academics.models import SubjectOffering, Attendance,Subject
 from django.db.models import Count, Q
+from datetime import datetime, date
 
 # Create your views here.
 
 YEAR_LEVELS = ['1st','2nd','3rd','4th']
 
 def admin_dashboard(request):
+
+    total_students = StudentProfile.objects.all().count()
+    total_teachers = TeacherProfile.objects.all().count()
+    total_parents = ParentProfile.objects.all().count()
+    total_subjects = Subject.objects.all().count()
     # Get the 5 most recent attendance records with related student and subject_offering
     recent_attendance_list = Attendance.objects.select_related(
         'student',                 # fetch related student
@@ -44,6 +50,10 @@ def admin_dashboard(request):
         'selected_subject_id': int(selected_subject_id) if selected_subject_id else None,
         'attendance_data': data,
         'recent_attendance_list': recent_attendance_list,
+        'total_students':total_students,
+        'total_parents':total_parents,
+        'total_subjects':total_subjects,
+        'total_teachers':total_teachers
     }
 
     return render(request,'dashboard/admindashboard.html', context)
@@ -51,33 +61,285 @@ def admin_dashboard(request):
 def teacher_home(request):
     teacher = request.user.teacherprofile
 
-    # Subjects assigned to this teacher
-    assigned_subjects = SubjectOffering.objects.filter(teacher=teacher)
+    total_students = StudentProfile.objects.filter(
+        subjects__offerings__teacher=teacher
+    ).distinct().count()
 
-    # Total subjects assigned
-    total_subjects = assigned_subjects.count()
-
-    # Get all students enrolled in the teacher's subjects
-    students_set = set()
-    for offering in assigned_subjects:
-        students_in_offering = offering.subject.students.all()  # assuming Subject has ManyToMany 'students'
-        for student in students_in_offering:
-            students_set.add(student)
-
-    total_students = len(students_set)
-
-    # Attendance today for these students in teacher's subjects
+    total_subjects = SubjectOffering.objects.filter(teacher=teacher).count()
     today = timezone.now().date()
     total_attendance = Attendance.objects.filter(
-        subject_offering__in=assigned_subjects,
+        subject_offering__teacher=teacher,
         date=today
     ).count()
+
+    # Recent attendance
+    recent_attendance_list = Attendance.objects.select_related(
+        'student',
+        'subject_offering__subject'
+    ).filter(subject_offering__teacher=teacher).order_by('-date', '-time')[:5]
+
+    # --- Dropdown Filter for Subjects ---
+    selected_subject_id = request.GET.get('subject', None)
+    subjects_for_teacher = SubjectOffering.objects.filter(teacher=teacher).values_list(
+        'subject__id', 'subject__subject_code'
+    ).distinct()
+
+    if selected_subject_id is None and subjects_for_teacher:
+        selected_subject_id = subjects_for_teacher[0][0]
+
+    # Attendance overview for selected subject
+    attendance_qs = Attendance.objects.filter(
+        subject_offering__teacher=teacher,
+        subject_offering__subject_id=selected_subject_id
+    )
+
+    status_counts = attendance_qs.values('status').annotate(count=Count('id'))
+    attendance_data = {'present': 0, 'absent': 0, 'late': 0}
+    for item in status_counts:
+        attendance_data[item['status']] = item['count']
 
     context = {
         'total_students': total_students,
         'total_subjects': total_subjects,
         'total_attendance': total_attendance,
+        'recent_attendance_list': recent_attendance_list,
+        'subjects_for_teacher': subjects_for_teacher,
+        'selected_subject_id': int(selected_subject_id) if selected_subject_id else None,
+        'attendance_data': attendance_data,
     }
     return render(request, 'dashboard/teacherhome.html', context)
 
 
+def student_dashboard(request):
+    subjects = request.user.studentprofile.subjects.all()
+    student = request.user.studentprofile
+
+    assigned_subjects = student.subjects.all()
+    total_subjects = assigned_subjects.count()
+
+    attendance_qs = student.attendances.all()
+
+    status_counts = attendance_qs.values('status').annotate(count=Count('id'))
+
+    attendance_data = {'present':0,'absent':0,'late':0}
+
+    for item in status_counts:
+        attendance_data[item['status']] = item['count']
+
+    total_records = attendance_qs.count()
+
+    if total_records > 0:
+        attendance_percentage = (attendance_data["present"] / total_records) * 100
+    else:
+        attendance_percentage = 0
+
+    context = {
+        'student':student,
+        'assigned_subject': assigned_subjects,
+        'total_subjects':total_subjects,
+        "attendance_data": attendance_data,
+        "attendance_percentage": round(attendance_percentage, 1),
+        "total_records": total_records,
+        'subjects':subjects
+    }
+    return render(request,'dashboard/student_dashboard.html',context)
+
+
+def student_subjects(request):
+    student = request.user.studentprofile
+    subjects = student.subjects.all()
+
+    subject_data = []
+
+    for subject in subjects:
+        # Get all subject offerings for this subject
+        offerings = SubjectOffering.objects.filter(subject=subject)
+        
+        # Aggregate attendances across all offerings
+        attendances = student.attendances.filter(subject_offering__in=offerings)
+
+        total_classes = attendances.count()
+        present_count = attendances.filter(status='present').count()
+        absent_count = attendances.filter(status='absent').count()
+        late_count = attendances.filter(status='late').count()
+        attendance_percentage = (present_count / total_classes * 100) if total_classes > 0 else 0
+
+        subject_data.append({
+            'name': subject.name,
+            'total_classes': total_classes,
+            'present_count': present_count,
+            'absent_count': absent_count,
+            'late_count': late_count,
+            'attendance_percentage': round(attendance_percentage, 1),
+        })
+
+    context = {
+        'subjects': subject_data
+    }
+
+    return render(request, 'dashboard/student_subjects.html', context)
+
+def student_attendance_overview(request):
+    student = request.user.studentprofile
+    subjects = student.subjects.all()
+
+    # Get filter values from GET request
+    subject_id = request.GET.get('subject')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    # Default end date is today
+    if not end_date:
+        end_date = date.today()
+    else:
+        end_date = date.fromisoformat(end_date)
+
+    # Default start date is first day of current month
+    if not start_date:
+        start_date = date.today().replace(day=1)
+    else:
+        start_date = date.fromisoformat(start_date)
+
+    # Ensure start_date and end_date are strings for template inputs
+    start_date_str = start_date.isoformat()
+    end_date_str = end_date.isoformat()
+
+    # Filter attendance records
+    attendance_qs = student.attendances.filter(date__range=[start_date, end_date])
+    selected_subject = None
+    if subject_id:
+        attendance_qs = attendance_qs.filter(subject_offering__subject_id=subject_id)
+        selected_subject = subjects.get(id=subject_id)
+
+    context = {
+        'subjects': subjects,
+        'attendance_records': attendance_qs.order_by('-date', '-time'),
+        'selected_subject': selected_subject,
+        'start_date': start_date_str,
+        'end_date': end_date_str,
+    }
+    return render(request, 'dashboard/student_attendance_overview.html', context)
+
+
+
+
+def parent_dashboard(request):
+
+    teacher = request.user.teacherprofile  # Logged-in teacher
+
+    total_students = StudentProfile.objects.filter(
+        subjects__offerings__teacher=teacher
+    ).distinct().count()
+
+    total_subjects = SubjectOffering.objects.filter(teacher=teacher).count()
+
+    # Total attendance today (for their subjects)
+    today = timezone.now().date()
+    total_attendance = Attendance.objects.filter(
+        subject_offering__teacher=teacher,
+        date=today
+    ).count()
+
+    # Recent attendance for this teacher only
+    recent_attendance_list = Attendance.objects.select_related(
+        'student',
+        'subject_offering__subject'
+    ).filter(subject_offering__teacher=teacher).order_by('-date', '-time')[:5]
+
+    context = {
+        'total_students': total_students,
+        'total_subjects': total_subjects,
+        'total_attendance': total_attendance,
+        'recent_attendance_list': recent_attendance_list,
+    }
+
+    return render(request, 'dashboard/teacherhome.html', context)
+
+
+def children_list(request):
+    parent = request.user.parentprofile
+    children = parent.students.all()
+
+    context = {
+        'children': children
+    }
+    return render(request, 'dashboard/children_list.html', context)
+
+
+def student_attendance_overview(request, student_id):
+    student = get_object_or_404(StudentProfile, student_ID=student_id)
+
+    # Subjects dropdown
+    subjects = student.subjects.all()
+    selected_subject_id = request.GET.get('subject')
+
+    # Always default BOTH to today's date
+    today = timezone.now().date()
+
+    start_date = request.GET.get('start_date') or today
+    end_date = request.GET.get('end_date') or today
+
+    # Filter logic
+    if selected_subject_id:
+        selected_subject = subjects.get(id=selected_subject_id)
+        offerings = SubjectOffering.objects.filter(subject=selected_subject)
+        attendance_records = student.attendances.filter(
+            subject_offering__in=offerings,
+            date__range=[start_date, end_date]
+        )
+    else:
+        selected_subject = None
+        attendance_records = student.attendances.filter(
+            date__range=[start_date, end_date]
+        )
+
+    context = {
+        'student': student,
+        'subjects': subjects,
+        'selected_subject': selected_subject,
+        'start_date': start_date,
+        'end_date': end_date,
+        'attendance_records': attendance_records.order_by('date', 'time'),
+    }
+    return render(request, 'dashboard/attendance_overview.html', context)
+
+
+
+
+
+def attendance_detail_per_subject(request, student_id, subject_id):
+    student = get_object_or_404(StudentProfile, student_ID=student_id)
+    subject = get_object_or_404(student.subjects, id=subject_id)
+
+    # Date range filter
+    start_date = request.GET.get('start_date') or None
+    end_date = request.GET.get('end_date') or timezone.now().date()
+
+    # Get all offerings for this subject
+    offerings = SubjectOffering.objects.filter(subject=subject)
+    attendances = student.attendances.filter(subject_offering__in=offerings)
+
+    if start_date:
+        attendances = attendances.filter(date__range=[start_date, end_date])
+
+    # Summary stats
+    total_classes = attendances.count()
+    present_count = attendances.filter(status='present').count()
+    absent_count = attendances.filter(status='absent').count()
+    late_count = attendances.filter(status='late').count()
+    attendance_percentage = (present_count / total_classes * 100) if total_classes > 0 else 0
+
+    context = {
+        'student': student,
+        'subject': subject,
+        'attendance_records': attendances.order_by('date', 'time'),
+        'total_classes': total_classes,
+        'present_count': present_count,
+        'absent_count': absent_count,
+        'late_count': late_count,
+        'attendance_percentage': round(attendance_percentage, 1),
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+
+    return render(request, 'parent/attendance_detail_subject.html', context)

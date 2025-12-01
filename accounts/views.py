@@ -1,19 +1,21 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import TeacherProfile,StudentProfile,CustomUser,ParentProfile
 from .forms import TeacherProfileForm, TeacherUserForm,StudentUserForm,StudentProfileForm,parentProfileForm,parentUserForm
-from django.contrib.auth import get_user_model,update_session_auth_hash,authenticate,login
+from django.contrib.auth import get_user_model,update_session_auth_hash,authenticate,login,logout
 from django.utils.crypto import get_random_string
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-from academics.models import Semester, Subject, SubjectOffering
+from academics.models import Semester, Subject, SubjectOffering,Course
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import SetPasswordForm
+from accounts.constants import YEAR_LEVEL_CHOICES, SECTION_CHOICES
+
 
 
 User = get_user_model()
@@ -63,19 +65,23 @@ def manage_teacher(request):
 # Add Teacher
 # -------------------------------
 def add_teacher(request):
-    email = None
-    password_generated = None
-
-    if request.method == "POST":
-        user_form = TeacherUserForm(request.POST)
-        profile_form = TeacherProfileForm(request.POST)
+    try:
+        if request.method == "POST":
+            user_form = TeacherUserForm(request.POST)
+            profile_form = TeacherProfileForm(request.POST)
 
         if user_form.is_valid() and profile_form.is_valid():
-            # Generate random password
-            random_password = get_random_string(8)
+
+            teacher_first_name = profile_form.cleaned_data['first_name']
+            teacher_last_name = profile_form.cleaned_data['last_name']
+            teacher_email,teacher_username = generate_unique_email(
+                teacher_first_name,teacher_last_name,domain="parent.isufst.com"
+            )
 
             user = user_form.save(commit=False)
-            user.set_password(random_password)
+            user.email = teacher_email
+            user.username = teacher_username
+            user.set_password(get_random_string(8))
             user.first_login = True
             user.role = 'teacher'
             user.save()
@@ -84,22 +90,26 @@ def add_teacher(request):
             teacher.user = user
             teacher.save()
 
-            email = user.email
-            password_generated = random_password
-
-            messages.success(request, f"Teacher created! Email: {email}, Password: {password_generated}")
+            messages.success(request, f"Teacher created! Email: {user.email}")
             return redirect('accounts:manage_teacher')
+
+    except IntegrityError:
+        user_form.add_error(None,"Email Already exists.")
+    except Exception as error:
+        profile_form.add_error(None,f'An Unexpected Error occured: {error}')
+
+    
     else:
         user_form = TeacherUserForm()
         profile_form = TeacherProfileForm()
-
-    return render(request, 'dashboard/manageteacher.html', {
+    context = {
         'user_form': user_form,
         'profile_form': profile_form,
-        'email': email,
-        'password': password_generated,
         'active': 'teacher',
-    })
+        'teachers' : TeacherProfile.objects.all()
+    }
+
+    return render(request, 'dashboard/manageteacher.html', context)
 
 
 # -------------------------------
@@ -141,8 +151,21 @@ def delete_teacher(request, teacher_id):
     return redirect('accounts:manage_teacher')
 
 def manage_student(request):
-    students = StudentProfile.objects.select_related('course').prefetch_related('subjects').all()
-    return render(request, 'dashboard/managestudents.html', {'students': students})
+    students = StudentProfile.objects.select_related('course').all()
+
+    # Attach subjects to each student
+    for student in students:
+        offerings = SubjectOffering.objects.filter(
+            year=student.year,
+            subject__course=student.course
+        )
+        student.subject_list = [o.subject for o in offerings]
+
+    return render(request, 'dashboard/managestudents.html', {
+        'students': students
+    })
+
+
 
 def add_student(request):
     semester = request.POST.get('semester', '1st')
@@ -157,12 +180,13 @@ def add_student(request):
         student_form = StudentProfileForm(request.POST, semester=semester, course=course)
 
         if create_new_parent:
-            parent_user_form = parentUserForm(request.POST)
-            parent_profile_form = parentProfileForm(request.POST)
+            # ✅ ADD PREFIX to avoid field name collision
+            parent_user_form = parentUserForm(request.POST, prefix='parent')
+            parent_profile_form = parentProfileForm(request.POST, prefix='parent')
             valid_parent_forms = parent_user_form.is_valid() and parent_profile_form.is_valid()
         else:
-            parent_user_form = parentUserForm()
-            parent_profile_form = parentProfileForm()
+            parent_user_form = parentUserForm(prefix='parent')
+            parent_profile_form = parentProfileForm(prefix='parent')
             valid_parent_forms = True
 
         if user_form.is_valid() and student_form.is_valid() and valid_parent_forms:
@@ -216,22 +240,22 @@ def add_student(request):
                 if subject_ids:
                     student_profile.subjects.set(subject_ids)
 
+                messages.success(request, f"Student {student_first} {student_last} added successfully!")
                 return redirect('accounts:manage_student')
 
-            except IntegrityError:
-                user_form.add_error(None, "Email already exists.")
+            except IntegrityError as e:
+                user_form.add_error(None, "Email or Student ID already exists.")
                 if create_new_parent:
-                    parent_user_form.add_error(None,"Parent email already exists.")
-                    parent_profile_form.add_error(None,"Parent already linked.")
-                student_form.add_error(None, "Student information duplicate.")
+                    parent_user_form.add_error(None, "Parent email already exists.")
             except Exception as error:
                 student_form.add_error(None, f"An unexpected error occurred: {str(error)}")
 
     else:
         user_form = StudentUserForm()
         student_form = StudentProfileForm(semester=semester, course=course)
-        parent_user_form = parentUserForm()
-        parent_profile_form = parentProfileForm()
+        # ✅ ADD PREFIX for GET request too
+        parent_user_form = parentUserForm(prefix='parent')
+        parent_profile_form = parentProfileForm(prefix='parent')
 
     subjects = Subject.objects.filter(semester_number=semester)
     if course:
@@ -255,46 +279,53 @@ def add_student(request):
         'parents': parents,
     })
 
-
-
 def edit_student(request, student_id):
-    student_profile = get_object_or_404(StudentProfile, student_ID=student_id)
-    student_user = student_profile.user
-
-    # Detect semester
-    enrolled_subjects = student_profile.subjects.all()
-    detected_semester = enrolled_subjects.first().semester_number if enrolled_subjects.exists() else '1st'
-    semester = request.POST.get('semester', detected_semester)
-    course = request.POST.get('course', student_profile.course.id if student_profile.course else None)
-    year = request.POST.get('year', student_profile.year)
-
+    student_profile = get_object_or_404(StudentProfile, pk=student_id)
+    
+    # Get current semester from student profile or default to '1st'
+    semester = request.POST.get('semester', student_profile.semester if hasattr(student_profile, 'semester') else '1st')
+    
     if request.method == 'POST':
         selected_parent_id = request.POST.get('parent_select', '').strip()
-        create_new_parent = request.POST.get('create_new_parent') == 'true'
-
-        # Student forms
-        student_form = StudentProfileForm(request.POST, instance=student_profile, semester=semester, course=course)
-        user_form = StudentUserForm(request.POST, instance=student_user)
-
-        # Parent forms
+        parent_action = request.POST.get('parent_action', 'keep')
+        create_new_parent = parent_action == 'add' and not selected_parent_id
+        
+        student_form = StudentProfileForm(request.POST, instance=student_profile, semester=semester, course=student_profile.course.id if student_profile.course else None)
+        
         if create_new_parent:
-            parent_user_form = parentUserForm(request.POST)
-            parent_profile_form = parentProfileForm(request.POST)
+            # ✅ ADD PREFIX to avoid field name collision
+            parent_user_form = parentUserForm(request.POST, prefix='parent')
+            parent_profile_form = parentProfileForm(request.POST, prefix='parent')
             valid_parent_forms = parent_user_form.is_valid() and parent_profile_form.is_valid()
         else:
-            parent_user_form = parentUserForm()
-            parent_profile_form = parentProfileForm()
+            parent_user_form = parentUserForm(prefix='parent')
+            parent_profile_form = parentProfileForm(prefix='parent')
             valid_parent_forms = True
-
-        if student_form.is_valid() and user_form.is_valid() and valid_parent_forms:
+        
+        if student_form.is_valid() and valid_parent_forms:
             try:
-                # --- Parent handling ---
-                if create_new_parent:
-                    # Create parent user
+                # Save student
+                student = student_form.save()
+                
+                # Handle subjects
+                subject_ids = [int(i) for i in request.POST.getlist('subjects') if i]
+                if subject_ids:
+                    student.subjects.set(subject_ids)
+                
+                # Handle parent logic
+                if parent_action == 'change' and selected_parent_id:
+                    # Change to existing parent
+                    parent = ParentProfile.objects.get(pk=int(selected_parent_id))
+                    student.parents.set([parent])
+                    
+                elif parent_action == 'add' and create_new_parent:
+                    # Create new parent
                     parent_first = parent_profile_form.cleaned_data['first_name']
                     parent_last = parent_profile_form.cleaned_data['last_name']
-                    parent_email, parent_username = generate_unique_email(parent_first, parent_last)
-
+                    parent_email, parent_username = generate_unique_email(
+                        parent_first, parent_last, domain="parent.isufst.com"
+                    )
+                    
                     parent_user = parent_user_form.save(commit=False)
                     parent_user.email = parent_email
                     parent_user.username = parent_username
@@ -302,87 +333,71 @@ def edit_student(request, student_id):
                     parent_user.role = 'parent'
                     parent_user.first_login = True
                     parent_user.save()
-
-                    # Create parent profile
+                    
                     parent_profile = parent_profile_form.save(commit=False)
                     parent_profile.user = parent_user
                     parent_profile.save()
-
-                    # Link new parent to student
-                    student_profile.parents.clear()
-                    student_profile.parents.add(parent_profile)
-
-                elif selected_parent_id:
-                    # Link to existing parent
-                    parent_profile = ParentProfile.objects.get(id=int(selected_parent_id))
-                    student_profile.parents.clear()
-                    student_profile.parents.add(parent_profile)
-
-                # --- Update student profile ---
-                student_profile = student_form.save(commit=False)
-                student_profile.user = student_user
-                student_profile.save()
-
-                # --- Update subjects ---
-                subject_ids = [int(i) for i in request.POST.getlist('subjects') if i]
-                student_profile.subjects.set(subject_ids)
-
-                messages.success(request, "Student updated successfully!")
+                    
+                    # Add new parent to student
+                    student.parents.add(parent_profile)
+                
+                # If parent_action == 'keep', do nothing with parents
+                
+                messages.success(request, f'{student.full_name} updated successfully.')
                 return redirect('accounts:manage_student')
-
-            except IntegrityError:
-                student_form.add_error(None, "A database integrity error occurred (maybe duplicate email/username).")
+                
+            except IntegrityError as e:
+                student_form.add_error(None, "Student ID or email already exists.")
                 if create_new_parent:
                     parent_user_form.add_error(None, "Parent email already exists.")
-            except Exception as e:
-                student_form.add_error(None, f"Unexpected error: {str(e)}")
-
+            except Exception as error:
+                student_form.add_error(None, f"An unexpected error occurred: {str(error)}")
     else:
-        student_form = StudentProfileForm(instance=student_profile, semester=semester, course=course)
-        user_form = StudentUserForm(instance=student_user)
-        parent_user_form = parentUserForm()
-        parent_profile_form = parentProfileForm()
-
-    # Subjects for current semester/course/year
-    subjects = Subject.objects.filter(semester_number=semester)
-    if course:
-        subjects = subjects.filter(course_id=course)
-    if year:
-        subject_ids = SubjectOffering.objects.filter(year=year).values_list('subject_id', flat=True)
-        subjects = subjects.filter(id__in=subject_ids)
-
-    enrolled_subject_ids = list(student_profile.subjects.values_list('id', flat=True))
+        student_form = StudentProfileForm(instance=student_profile, semester=semester, course=student_profile.course.id if student_profile.course else None)
+        # ✅ ADD PREFIX for GET request too
+        parent_user_form = parentUserForm(prefix='parent')
+        parent_profile_form = parentProfileForm(prefix='parent')
+    
+    # Get subjects filtered by student's course, year, and semester
+    subjects = Subject.objects.filter(
+        course=student_profile.course,
+        semester_number=semester
+    )
+    
+    # Filter by year using SubjectOffering
+    subject_ids = SubjectOffering.objects.filter(year=student_profile.year).values_list('subject_id', flat=True)
+    subjects = subjects.filter(id__in=subject_ids)
+    
+    enrolled_subject_ids = student_profile.subjects.values_list('id', flat=True)
+    
+    # Get current parents and available parents
     current_parents = student_profile.parents.all()
-    parents = ParentProfile.objects.all().order_by('first_name', 'last_name')
-
-    forms_list = [user_form, student_form, parent_user_form, parent_profile_form]
-
-    return render(request, 'dashboard/edit_student.html', {
-        'user_form': user_form,
+    parents = ParentProfile.objects.exclude(id__in=current_parents).order_by('first_name', 'last_name')
+    
+    forms_list = [student_form, parent_user_form, parent_profile_form]
+    
+    context = {
+        'student_profile': student_profile,
         'student_form': student_form,
         'parent_user_form': parent_user_form,
         'parent_profile_form': parent_profile_form,
-        'student_profile': student_profile,
-        'semester': semester,
+        'current_parents': current_parents,
+        'parents': parents,
         'subjects': subjects,
         'enrolled_subject_ids': enrolled_subject_ids,
-        'current_parents': current_parents,
+        'semester': semester,
         'forms_list': forms_list,
-        'parents': parents,
-    })
+    }
+    return render(request, 'dashboard/edit_student.html', context)
+
 
 
 
 def delete_student(request, student_id):
-    student_profile = get_object_or_404(StudentProfile, student_ID=student_id)
-    
-    if request.method == 'POST' or request.method == 'GET':  # Allow GET for now
-        student_user = student_profile.user
-        student_profile.delete()
-        student_user.delete()
-        messages.success(request, 'Student deleted successfully!')
-        return redirect('accounts:manage_student')
-    
+    student = get_object_or_404(StudentProfile, student_ID=student_id.strip())
+    student_name = f"{student.first_name} {student.last_name}"
+    student.delete()
+    messages.success(request, f"Student {student_name} has been successfully deleted.")
     return redirect('accounts:manage_student')
 def load_subjects(request):
     semester = request.GET.get('semester')
@@ -396,13 +411,12 @@ def load_subjects(request):
     if course_id:
         subjects = subjects.filter(course_id=course_id)
     if year:
-        # Only subjects that have offerings for this year
+        # Only include subjects assigned to this year in SubjectOffering
         subject_ids = SubjectOffering.objects.filter(year=year).values_list('subject_id', flat=True)
         subjects = subjects.filter(id__in=subject_ids)
 
     data = [{'id': s.id, 'subject_code': s.subject_code, 'name': s.name} for s in subjects]
     return JsonResponse({'subjects': data})
-
 
 def manage_parents(request):
     parents = ParentProfile.objects.all()
@@ -521,7 +535,7 @@ def custom_login(request):
             elif user.role == 'student':
                 return redirect('dashboard:student_dashboard')
             elif user.role == 'parent':
-                return redirect('dashboard:parent_dashboard')
+                return redirect('dashboard:dashboard')
             else:
                 return redirect('accounts:login')
 
@@ -531,3 +545,103 @@ def custom_login(request):
     return render(request, 'dashboard/login.html')
 
 
+def logout_view(request):
+    logout(request)
+    return redirect('accounts:login')
+
+
+
+def accounts_dashboard(request):
+    # --- Filters ---
+    selected_role = request.GET.get('role')
+    selected_year = request.GET.get('year')
+    selected_section = request.GET.get('section')
+    selected_course = request.GET.get('course')
+
+    # --- Students ---
+    student_groups = {}
+    if selected_role in ['', 'student']:
+        students = StudentProfile.objects.all()
+        if selected_year:
+            students = students.filter(year=selected_year)
+        if selected_section:
+            students = students.filter(section=selected_section)
+        if selected_course:
+            students = students.filter(course__id=selected_course)
+
+        for s in students:
+            key = f"{s.year} - {s.section}"
+            if key not in student_groups:
+                student_groups[key] = []
+            student_groups[key].append({
+                "first_name": s.first_name,
+                "last_name": s.last_name,
+                "email": s.user.email,
+                "password": s.user.plain_password if hasattr(s.user, 'plain_password') else "N/A",
+                "course": s.course.name if s.course else "N/A",
+            })
+
+    # --- Parents filtered by their children ---
+    parent_groups = []
+    if selected_role in ['', 'parent']:
+        parents = ParentProfile.objects.all()
+        if selected_year or selected_section or selected_course:
+            # filter parents whose children match criteria
+            filtered_parents = []
+            for p in parents:
+                children = p.students.all()
+                if selected_year:
+                    children = children.filter(year=selected_year)
+                if selected_section:
+                    children = children.filter(section=selected_section)
+                if selected_course:
+                    children = children.filter(course__id=selected_course)
+                if children.exists():
+                    filtered_parents.append((p, children))
+            parents = [p for p, _ in filtered_parents]
+
+        for p in parents:
+            children = ", ".join([f"{c.first_name} {c.last_name}" for c in p.students.all()])
+            parent_groups.append({
+                "first_name": p.first_name,
+                "last_name": p.last_name,
+                "children": children,
+                "email": p.user.email,
+                "password": p.user.plain_password if hasattr(p.user, 'plain_password') else "N/A",
+            })
+
+    # --- Teachers ---
+    # --- Teachers ---
+    teacher_records = []
+    if selected_role in ['', 'teacher']:
+        teachers = TeacherProfile.objects.all()
+        
+        # Optional: filter by year/course if selected
+        if selected_year:
+            teachers = teachers.filter(subjects__year=selected_year).distinct()
+        if selected_course:
+            teachers = teachers.filter(subjects__subject__course__id=selected_course).distinct()
+        
+        for t in teachers:
+            # attach all subject offerings for template
+            t.subject_offerings = t.subjects.all()
+            teacher_records.append(t)
+
+
+    # --- Courses for dropdown ---
+    courses = Course.objects.all()
+
+    context = {
+        "student_groups": student_groups,
+        "parent_groups": parent_groups,
+        "teacher_records": teacher_records,
+        "courses": courses,
+        "selected_year": selected_year,
+        "selected_section": selected_section,
+        "selected_course": selected_course,
+        "selected_role": selected_role,
+        "year_levels": YEAR_LEVEL_CHOICES,
+        "sections": SECTION_CHOICES,
+    }
+
+    return render(request, "dashboard/dashboard_accounts.html", context)

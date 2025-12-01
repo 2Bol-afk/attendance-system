@@ -38,7 +38,7 @@ class Subject(models.Model):
 
 class SubjectOffering(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='offerings')
-    teacher = models.ForeignKey("accounts.TeacherProfile", on_delete=models.SET_NULL, null=True) # second migration
+    teacher = models.ForeignKey("accounts.TeacherProfile", on_delete=models.SET_NULL, null=True,related_name='subjects') # second migration
     year = models.CharField(max_length=10, choices=YEAR_LEVEL_CHOICES)
     school_year = models.CharField(max_length=20)
 

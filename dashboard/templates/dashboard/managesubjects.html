@@ -9,7 +9,15 @@
     <h2>Manage Subjects</h2>
     <a href="#" class="add-subject-btn" id="openModalSubject">+ Add Subject</a>
   </div>
-
+  {% if messages %}
+  <div class="mt-4">
+    {% for message in messages %}
+      <div class="info-note">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
   <!-- Add Subject Modal -->
   <div id="subjectModal" class="modal">
     <div class="modal-content">

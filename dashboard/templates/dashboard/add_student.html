@@ -8,25 +8,29 @@
     <h2>Add Student</h2>
   </div>
 
-  <form action="{% url 'accounts:add_student' %}" method="post" class="add-student-form" id="studentForm" onsubmit="return validateForm()">
+  <form action="{% url 'accounts:add_student' %}" method="post" class="add-student-form" id="studentForm">
     {% csrf_token %}
 
     <!-- Show all form errors -->
-    {% for form in forms_list %}
-      {% if form.errors %}
-        <div class="error-container">
-          <div class="error-title"><i>!</i> Please fix the errors below:</div>
-          {{ form.non_field_errors }}
-          {% for field in form %}
-            {% for error in field.errors %}
-              <div class="error-item">
-                <strong>{{ field.label }}:</strong> {{ error }}
-              </div>
+    {% if forms_list %}
+      {% for form in forms_list %}
+        {% if form.errors %}
+          <div class="error-container">
+            <div class="error-title"><i>!</i> Please fix the errors below:</div>
+            {{ form.non_field_errors }}
+            {% for field in form %}
+              {% for error in field.errors %}
+                <div class="error-item">
+                  <strong>{{ field.label }}:</strong> {{ error }}
+                </div>
+              {% endfor %}
             {% endfor %}
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endfor %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    <h3>Student Information</h3>
 
     <!-- Basic Info -->
     <div class="form-row">
@@ -75,7 +79,7 @@
         {% for value, label in student_form.fields.semester.choices %}
           <label class="radio-label">
             <input type="radio" name="semester" value="{{ value }}"
-                   {% if student_form.fields.semester.initial == value %}checked{% endif %}>
+                   {% if student_form.semester.value == value or value == '1st' and not student_form.semester.value %}checked{% endif %}>
             {{ label }}
           </label>
         {% endfor %}
@@ -102,24 +106,30 @@
               <td>{{ subject.subject_code }}</td>
               <td>{{ subject.name }}</td>
             </tr>
+          {% empty %}
+            <tr>
+              <td colspan="3" style="text-align:center;color:#999;">No subjects available. Select course and year first.</td>
+            </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
 
     <!-- Parent Section -->
-    <h3>Parent Information</h3>
+    <h3 style="margin-top:30px;">Parent Information</h3>
 
     <!-- Search & Select Existing Parent -->
     <div class="form-row">
-      <div class="form-group">
-        <label for="parent_search">Search Parent</label>
-        <input type="text" id="parent_search" placeholder="Type to search..." autocomplete="off" class="input-field">
+      <div class="form-group" style="flex: 2;">
+        <label for="parent_search">Search Existing Parent</label>
+        <input type="text" id="parent_search" placeholder="Type parent name to search..." autocomplete="off" class="input-field">
 
         <select id="parent_select" name="parent_select" size="5" class="select-field mt-2">
           <option value="">-- Select Existing Parent --</option>
           {% for parent in parents %}
-            <option value="{{ parent.id }}">{{ parent.first_name }} {{ parent.middle_name }} {{ parent.last_name }} - {{ parent.contact_number }}</option>
+            <option value="{{ parent.id }}">
+              {{ parent.first_name }} {{ parent.middle_name|default:"" }} {{ parent.last_name }} - {{ parent.contact_number }}
+            </option>
           {% endfor %}
         </select>
 
@@ -127,19 +137,19 @@
       </div>
     </div>
 
-    <!-- New Parent Inputs -->
+    <!-- New Parent Inputs (Hidden by default) -->
     <div id="new_parent_inputs" style="display:none;">
       <div class="form-row">
         <div class="form-group">
-          <label for="{{ parent_profile_form.first_name.id_for_label }}">First Name</label>
+          <label for="{{ parent_profile_form.first_name.id_for_label }}">Parent First Name</label>
           {{ parent_profile_form.first_name }}
         </div>
         <div class="form-group">
-          <label for="{{ parent_profile_form.middle_name.id_for_label }}">Middle Name</label>
+          <label for="{{ parent_profile_form.middle_name.id_for_label }}">Parent Middle Name</label>
           {{ parent_profile_form.middle_name }}
         </div>
         <div class="form-group">
-          <label for="{{ parent_profile_form.last_name.id_for_label }}">Last Name</label>
+          <label for="{{ parent_profile_form.last_name.id_for_label }}">Parent Last Name</label>
           {{ parent_profile_form.last_name }}
         </div>
         <div class="form-group">
@@ -149,8 +159,9 @@
       </div>
     </div>
 
-    <div class="form-row">
+    <div class="form-row" style="margin-top:30px;">
       <button type="submit" class="btn-save">Save Student</button>
+      <a href="{% url 'accounts:manage_student' %}" class="btn-cancel">Cancel</a>
     </div>
 
   </form>
@@ -159,84 +170,107 @@
 
 <!-- Scripts -->
 <script>
-function validateForm() {
-  // Validation handled on backend
-  return true;
-}
-
 document.addEventListener("DOMContentLoaded", function() {
   const toggleBtn = document.getElementById('toggle_parent_inputs');
   const newParentDiv = document.getElementById('new_parent_inputs');
   const parentSelect = document.getElementById('parent_select');
   const searchInput = document.getElementById('parent_search');
 
+  // Toggle parent form fields enabled/disabled state
   function toggleParentFields(enable) {
     const inputs = newParentDiv.querySelectorAll('input, select, textarea');
     inputs.forEach(input => {
       if(enable) {
         input.removeAttribute('disabled');
-        if(input.dataset.originalRequired === 'true') input.setAttribute('required','required');
+        if(input.dataset.originalRequired === 'true') {
+          input.setAttribute('required','required');
+        }
       } else {
-        if(input.hasAttribute('required')) input.dataset.originalRequired='true';
+        if(input.hasAttribute('required')) {
+          input.dataset.originalRequired = 'true';
+        }
         input.removeAttribute('required');
         input.setAttribute('disabled','disabled');
-        input.value='';
+        input.value = '';
       }
     });
   }
 
-  toggleBtn.addEventListener('click', function(e){
+  // Toggle between new parent and existing parent
+  toggleBtn.addEventListener('click', function(e) {
     e.preventDefault();
-    if(newParentDiv.style.display==='none'||newParentDiv.style.display===''){
-      newParentDiv.style.display='block';
-      parentSelect.value="";
+    if(newParentDiv.style.display === 'none' || newParentDiv.style.display === '') {
+      newParentDiv.style.display = 'block';
+      parentSelect.value = "";
       toggleParentFields(true);
-      toggleBtn.textContent='Cancel (Use Existing Parent)';
+      toggleBtn.textContent = 'Cancel (Use Existing Parent)';
     } else {
-      newParentDiv.style.display='none';
+      newParentDiv.style.display = 'none';
       toggleParentFields(false);
-      toggleBtn.textContent='Add New Parent';
+      toggleBtn.textContent = 'Add New Parent';
     }
   });
 
-  parentSelect.addEventListener('change', function(){
-    if(this.value){
-      newParentDiv.style.display='none';
+  // When selecting existing parent, hide new parent form
+  parentSelect.addEventListener('change', function() {
+    if(this.value) {
+      newParentDiv.style.display = 'none';
       toggleParentFields(false);
-      toggleBtn.textContent='Add New Parent';
+      toggleBtn.textContent = 'Add New Parent';
     }
   });
 
+  // Initialize - disable new parent fields by default
   toggleParentFields(false);
 
-  if(searchInput){
-    searchInput.addEventListener('input', function(){
+  // Search functionality for parent dropdown
+  if(searchInput) {
+    searchInput.addEventListener('input', function() {
       const filter = this.value.toLowerCase();
-      for(let i=0;i<parentSelect.options.length;i++){
+      for(let i = 0; i < parentSelect.options.length; i++) {
         const option = parentSelect.options[i];
-        option.style.display = option.text.toLowerCase().includes(filter)?'':'none';
+        const text = option.text.toLowerCase();
+        option.style.display = text.includes(filter) ? '' : 'none';
       }
     });
   }
 
-  // Subjects dynamic loading
+  // Dynamic subject loading based on semester, course, year
   let manualSelections = new Set();
-  function loadSubjects(){
+  
+  function loadSubjects() {
     const semesterInput = document.querySelector('input[name="semester"]:checked');
     const courseSelect = document.getElementById('id_course');
     const yearSelect = document.getElementById('id_year');
     const studentTypeSelect = document.getElementById('id_is_regular');
-    if(!semesterInput||!courseSelect||!yearSelect||!studentTypeSelect) return;
+    
+    if(!semesterInput || !courseSelect || !yearSelect || !studentTypeSelect) return;
 
-    fetch("{% url 'accounts:load_subjects' %}?semester="+semesterInput.value+"&course="+courseSelect.value+"&year="+yearSelect.value)
-      .then(res=>res.json())
-      .then(data=>{
-        const container=document.getElementById('subject-container');
-        container.innerHTML='';
-        const isRegular=studentTypeSelect.value==='reg';
-        data.subjects.forEach(sub=>{
-          let checked = isRegular?'checked':(manualSelections.has(sub.id)?'checked':'');
-          container.innerHTML+=`<tr>
+    const semester = semesterInput.value;
+    const course = courseSelect.value;
+    const year = yearSelect.value;
+
+    if(!course || !year) {
+      document.getElementById('subject-container').innerHTML = 
+        '<tr><td colspan="3" style="text-align:center;color:#999;">Please select course and year first.</td></tr>';
+      return;
+    }
+
+    fetch(`{% url 'accounts:load_subjects' %}?semester=${semester}&course=${course}&year=${year}`)
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById('subject-container');
+        container.innerHTML = '';
+        const isRegular = studentTypeSelect.value === 'reg';
+        
+        if(data.subjects.length === 0) {
+          container.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#999;">No subjects available for this selection.</td></tr>';
+          return;
+        }
+
+        data.subjects.forEach(sub => {
+          let checked = isRegular ? 'checked' : (manualSelections.has(sub.id) ? 'checked' : '');
+          container.innerHTML += `<tr>
             <td style="text-align:center;">
               <input type="checkbox" name="subjects" value="${sub.id}" ${checked} class="subject-checkbox">
             </td>
@@ -244,60 +278,281 @@ document.addEventListener("DOMContentLoaded", function() {
             <td>${sub.name}</td>
           </tr>`;
         });
-        document.querySelectorAll('.subject-checkbox').forEach(cb=>{
-          cb.addEventListener('change',function(){
-            const id=parseInt(this.value);
-            if(this.checked) manualSelections.add(id);
-            else manualSelections.delete(id);
+
+        // Add change listeners to track manual selections
+        document.querySelectorAll('.subject-checkbox').forEach(cb => {
+          cb.addEventListener('change', function() {
+            const id = parseInt(this.value);
+            if(this.checked) {
+              manualSelections.add(id);
+            } else {
+              manualSelections.delete(id);
+            }
           });
         });
+      })
+      .catch(err => {
+        console.error('Error loading subjects:', err);
+        document.getElementById('subject-container').innerHTML = 
+          '<tr><td colspan="3" style="text-align:center;color:#d00;">Error loading subjects.</td></tr>';
       });
   }
 
+  // Attach event listeners for dynamic subject loading
   const courseSelect = document.getElementById('id_course');
   const yearSelect = document.getElementById('id_year');
   const studentTypeSelect = document.getElementById('id_is_regular');
-  if(courseSelect) courseSelect.addEventListener('change',loadSubjects);
-  if(yearSelect) yearSelect.addEventListener('change',loadSubjects);
-  if(studentTypeSelect){
-    studentTypeSelect.addEventListener('change',function(){
-      if(this.value==='irreg') manualSelections.clear();
+  
+  if(courseSelect) courseSelect.addEventListener('change', loadSubjects);
+  if(yearSelect) yearSelect.addEventListener('change', loadSubjects);
+  if(studentTypeSelect) {
+    studentTypeSelect.addEventListener('change', function() {
+      if(this.value === 'irreg') {
+        manualSelections.clear();
+      }
       loadSubjects();
     });
   }
-  document.querySelectorAll('input[name="semester"]').forEach(el=>el.addEventListener('change',loadSubjects));
 
+  document.querySelectorAll('input[name="semester"]').forEach(el => {
+    el.addEventListener('change', loadSubjects);
+  });
+
+  // Initial load
   loadSubjects();
 });
 </script>
 
 <!-- Styles -->
 <style>
-.add-student-form .form-row{display:flex;flex-wrap:wrap;gap:20px;margin-bottom:20px;}
-.add-student-form .form-group{flex:1;display:flex;flex-direction:column;}
-.add-student-form label{font-weight:500;margin-bottom:5px;color:#111827;}
-.add-student-form input[type="text"],.add-student-form select{padding:10px;border-radius:8px;border:1px solid #ccc;font-size:14px;outline:none;transition:0.3s;}
-.add-student-form input[type="text"]:focus,.add-student-form select:focus{border-color:#4f46e5;box-shadow:0 0 5px rgba(79,70,229,0.3);}
-.semester-options{display:flex;gap:15px;margin-top:5px;}
-.radio-label input[type="radio"]{margin-right:5px;}
-.subjects-table{width:100%;border-collapse:collapse;margin-top:10px;}
-.subjects-table th,.subjects-table td{border:1px solid #ddd;padding:10px;text-align:left;}
-.subjects-table th{background-color:#f3f4f6;font-weight:600;}
-.subjects-table tr:nth-child(even){background-color:#fafafa;}
-.btn-save,.btn-secondary{padding:12px 25px;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:0.3s;}
-.btn-save{background-color:#4f46e5;}
-.btn-save:hover{background-color:#4338ca;}
-.btn-secondary{background-color:#6b7280;}
-.btn-secondary:hover{background-color:#4b5563;}
-.error-container{background:#fff4f4;border-left:5px solid #e11d48;padding:15px 18px;border-radius:6px;margin-bottom:20px;box-shadow:0 2px 6px rgba(0,0,0,0.05);}
-.error-title{color:#b91c1c;font-weight:bold;font-size:16px;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.error-title i{font-style:normal;background:#b91c1c;color:white;border-radius:50%;width:20px;height:20px;text-align:center;line-height:20px;font-size:13px;}
-.error-item{background:#ffe6e6;padding:8px 12px;border-radius:5px;margin-bottom:6px;color:#7f1d1d;border:1px solid #f2b6b6;font-size:14px;}
-.input-field,.select-field{width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;font-size:14px;outline:none;transition:0.3s;margin-top:5px;}
-.input-field:focus,.select-field:focus{border-color:#4f46e5;box-shadow:0 0 5px rgba(79,70,229,0.3);}
-.select-field{height:150px;}
-.mt-2{margin-top:8px;}
-.mt-3{margin-top:12px;}
+.add-student-form h3 {
+  color: #111827;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.add-student-form .form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.add-student-form .form-group {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.add-student-form label {
+  font-weight: 500;
+  margin-bottom: 5px;
+  color: #111827;
+  font-size: 14px;
+}
+
+.add-student-form input[type="text"],
+.add-student-form input[type="number"],
+.add-student-form select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.add-student-form input[type="text"]:focus,
+.add-student-form input[type="number"]:focus,
+.add-student-form select:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.semester-row {
+  flex-direction: column;
+}
+
+.semester-options {
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 400;
+}
+
+.radio-label input[type="radio"] {
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+.subjects-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.subjects-table th,
+.subjects-table td {
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+  text-align: left;
+}
+
+.subjects-table th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.subjects-table tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.subjects-table tr:hover {
+  background-color: #f3f4f6;
+}
+
+.btn-save,
+.btn-secondary,
+.btn-cancel {
+  padding: 12px 30px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-save {
+  background-color: #4f46e5;
+  color: white;
+}
+
+.btn-save:hover {
+  background-color: #4338ca;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.btn-secondary {
+  background-color: #6b7280;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #4b5563;
+}
+
+.btn-cancel {
+  background-color: #e5e7eb;
+  color: #374151;
+  margin-left: 10px;
+}
+
+.btn-cancel:hover {
+  background-color: #d1d5db;
+}
+
+.error-container {
+  background: #fef2f2;
+  border-left: 5px solid #ef4444;
+  padding: 15px 18px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.error-title {
+  color: #dc2626;
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-title i {
+  font-style: normal;
+  background: #dc2626;
+  color: white;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  text-align: center;
+  line-height: 22px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.error-item {
+  background: #fee2e2;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  font-size: 14px;
+}
+
+.error-item:last-child {
+  margin-bottom: 0;
+}
+
+.input-field,
+.select-field {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.input-field:focus,
+.select-field:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.select-field {
+  height: 150px;
+  overflow-y: auto;
+}
+
+.mt-2 {
+  margin-top: 8px;
+}
+
+.mt-3 {
+  margin-top: 12px;
+}
+
+.dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.dashboard-header h2 {
+  color: #111827;
+  font-size: 28px;
+  font-weight: 700;
+}
 </style>
 
 {% endblock %}

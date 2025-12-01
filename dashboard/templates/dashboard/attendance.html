@@ -139,9 +139,20 @@
 
 <div class="attendance-container">
 
+
   <div class="attendance-header">
     <h2>Mark Attendance</h2>
   </div>
+  {% if messages %}
+  <div class="mt-4">
+    {% for message in messages %}
+      <div class="info-note">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
 
   <!-- Legend -->
   <div class="legend">

@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Accounts Dashboard{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/report.css' %}">
+
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h2>Accounts Dashboard</h2>
+  </div>
+
+  <!-- Filter Form -->
+  <form method="get" class="filter-form">
+
+    <!-- Role -->
+    <div class="form-group">
+      <label>Role</label>
+      <select name="role">
+        <option value="">All Roles</option>
+        <option value="student" {% if selected_role == 'student' %}selected{% endif %}>Student</option>
+        <option value="parent" {% if selected_role == 'parent' %}selected{% endif %}>Parent</option>
+        <option value="teacher" {% if selected_role == 'teacher' %}selected{% endif %}>Teacher</option>
+      </select>
+    </div>
+
+    <!-- Year -->
+    <div class="form-group">
+      <label>Year</label>
+      <select name="year">
+        <option value="">All Years</option>
+        {% for y_code, y_name in year_levels %}
+          <option value="{{ y_code }}" {% if selected_year == y_code %}selected{% endif %}>{{ y_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Section -->
+    <div class="form-group">
+      <label>Section</label>
+      <select name="section">
+        <option value="">All Sections</option>
+        {% for sec_code, sec_name in sections %}
+          <option value="{{ sec_code }}" {% if selected_section == sec_code %}selected{% endif %}>{{ sec_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Course -->
+    <div class="form-group">
+      <label>Course</label>
+      <select name="course">
+        <option value="">-- Select Course --</option>
+        {% for course in courses %}
+          <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>
+            {{ course.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+
+    <div class="form-group filter-button">
+      <button type="submit" class="add-student-btn">Filter</button>
+    </div>
+    
+  </form>
+
+  <!-- Students Table -->
+  {% if selected_role == '' or selected_role == 'student' %}
+  <div class="attendance-summary-box">
+    <h3>Students by Year/Section</h3>
+    {% for section, students in student_groups.items %}
+      <h4>{{ section }}</h4>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Course</th>
+            <th>Email</th>
+            <th>Password</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+          <tr>
+            <td>{{ s.first_name }}</td>
+            <td>{{ s.last_name }}</td>
+            <td>{{ s.course }}</td>
+            <td>{{ s.email }}</td>
+            <td>{{ s.password }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% empty %}
+      <p>No students found.</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Parents Table -->
+  {% if selected_role == '' or selected_role == 'parent' %}
+  <div class="attendance-summary-box">
+    <h3>Parents</h3>
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>First Name</th>
+          <th>Last Name</th>
+          <th>Children</th>
+          <th>Email</th>
+          <th>Password</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in parent_groups %}
+        <tr>
+          <td>{{ p.first_name }}</td>
+          <td>{{ p.last_name }}</td>
+          <td>{{ p.children }}</td>
+          <td>{{ p.email }}</td>
+          <td>{{ p.password }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Teachers Table -->
+ {% if selected_role == '' or selected_role == 'teacher' %}
+<div class="attendance-summary-box">
+  <h3>Teachers</h3>
+  <table class="report-table">
+    <thead>
+      <tr>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Subjects</th>
+        <th>Year</th>
+        <th>Course</th>
+        <th>School Year</th>
+        <th>Email</th>
+        <th>Password</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in teacher_records %}
+        <tr>
+          <td>{{ t.first_name }}</td>
+          <td>{{ t.last_name }}</td>
+          <td>
+            {% for so in t.subject_offerings %}
+              {{ so.subject.subject_code }} - {{ so.subject.name }}<br>
+            {% empty %}
+              N/A
+            {% endfor %}
+          </td>
+          <td>
+            {% for so in t.subject_offerings %}
+              {{ so.year }}<br>
+            {% empty %}
+              N/A
+            {% endfor %}
+          </td>
+          <td>
+            {% for so in t.subject_offerings %}
+              {{ so.subject.course.name }}<br>
+            {% empty %}
+              N/A
+            {% endfor %}
+          </td>
+          <td>
+            {% for so in t.subject_offerings %}
+              {{ so.school_year }}<br>
+            {% empty %}
+              N/A
+            {% endfor %}
+          </td>
+          <td>{{ t.user.email }}</td>
+          <td>{{ t.user.plain_password|default:"N/A" }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+</div>
+
+{% endblock %}

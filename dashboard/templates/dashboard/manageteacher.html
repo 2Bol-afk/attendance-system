@@ -9,6 +9,16 @@
     <h2>Manage Teachers</h2>
     <a href="#" class="add-student-btn" id="openAddTeacherModal">+ Add Teacher</a>
   </div>
+  
+    {% if messages %}
+  <div class="mt-4">
+    {% for message in messages %}
+      <div class="info-note">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
 
   <!-- Add Teacher Modal -->
   <div id="addTeacherModal" class="modal">
@@ -17,10 +27,6 @@
       <h2>Add Teacher</h2>
       <form method="post" action="{% url 'accounts:add_teacher' %}">
         {% csrf_token %}
-        <div class="form-group">
-          <label for="{{ user_form.email.id_for_label }}">Email</label>
-          {{ user_form.email }}
-        </div>
         <div class="form-group">
           <label for="{{ profile_form.first_name.id_for_label }}">First Name</label>
           {{ profile_form.first_name }}

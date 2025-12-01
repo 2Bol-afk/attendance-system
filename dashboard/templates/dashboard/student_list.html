@@ -6,16 +6,54 @@
   </div>
 
   <!-- Filter by Offering -->
-  <form method="get" style="margin-bottom:20px;">
-    <label for="offering">Filter by Subject Offering:</label>
-    <select name="offering" id="offering" onchange="this.form.submit()" style="padding:6px 12px; border-radius:6px; border:1px solid #ccc;">
-      <option value="">All</option>
-      {% for offer in offerings %}
-        <option value="{{ offer.id }}" {% if offer.id|stringformat:"s" == selected_offering %}selected{% endif %}>
-          {{ offer.subject.subject_code }} - {{ offer.year }} - {{ offer.school_year }}
-        </option>
-      {% endfor %}
-    </select>
+ <form method="get" class="filter-container">
+    <!-- Offering -->
+    <div>
+      <label for="offering">Offering:</label>
+      <select name="offering" id="offering" onchange="this.form.submit()">
+        <option value="" {% if not selected_offering %}selected{% endif %}>All</option>
+        {% for offer in offerings %}
+          <option value="{{ offer.id }}" {% if offer.id|stringformat:"s" == selected_offering %}selected{% endif %}>
+            {{ offer.subject.subject_code }} - {{ offer.year }} - {{ offer.school_year }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Year -->
+    <div>
+      <label for="year">Year:</label>
+      <select name="year" id="year" onchange="this.form.submit()">
+        <option value="" {% if not selected_year %}selected{% endif %}>All</option>
+        {% for y in years %}
+          <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Section -->
+    <div>
+      <label for="section">Section:</label>
+      <select name="section" id="section" onchange="this.form.submit()">
+        <option value="" {% if not selected_section %}selected{% endif %}>All</option>
+        {% for sec in sections %}
+          <option value="{{ sec }}" {% if sec == selected_section %}selected{% endif %}>{{ sec|upper }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Status -->
+    <div>
+      <label for="status">Status:</label>
+      <select name="status" id="status" onchange="this.form.submit()">
+        <option value="" {% if not selected_status %}selected{% endif %}>All</option>
+        {% for s in statuses %}
+          <option value="{{ s }}" {% if s == selected_status %}selected{% endif %}>
+            {% if s == 'reg' %}Regular{% else %}Irregular{% endif %}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
   </form>
 
   <div class="attendance-box">
@@ -51,4 +89,44 @@
     </table>
   </div>
 </div>
+
+<style>
+/* General dropdown styling */
+select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background-color: #fff;
+  color: #1f2937;
+  transition: all 0.2s ease;
+  min-width: 150px;
+   /* remove default arrow in some browsers */
+  cursor: pointer;
+}
+
+/* Add a subtle shadow on focus */
+select:focus {
+  outline: none;
+  border-color: #3b82f6; /* blue-500 */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Container for multiple filters */
+.filter-container {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+/* Label styling */
+.filter-container label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #374151; /* gray-700 */
+}
+</style>
+
 {% endblock %}

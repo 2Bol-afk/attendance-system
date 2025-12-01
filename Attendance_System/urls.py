@@ -26,6 +26,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('dashboard/',include('dashboard.urls')),
     path('academic/',include('academics.urls')),
+    path('reports/',include('reports.urls')),
     path('accounts/',include('accounts.urls')),
     path('accounts/', include([
         path('login/', views.custom_login, name='login'),

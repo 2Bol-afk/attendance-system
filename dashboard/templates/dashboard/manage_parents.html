@@ -8,6 +8,15 @@
     <h2>Manage Parents</h2>
     <a href="#" id="openAddParentsModal" class="add-student-btn">+ Add Parent</a>
   </div>
+    {% if messages %}
+  <div class="mt-4">
+    {% for message in messages %}
+      <div class="info-note">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
 
   <div class="attendance-box">
     <table class="recent-table">

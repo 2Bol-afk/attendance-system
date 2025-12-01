@@ -52,3 +52,6 @@ class StudentProfile(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.course.name if self.course else 'No Course'}"
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"

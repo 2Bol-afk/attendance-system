@@ -1,0 +1,48 @@
+{% extends 'base_student.html' %}
+{% block title %}My Subjects{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <h2>My Subjects</h2>
+  </div>
+
+  <!-- Subjects Table -->
+  <div class="attendance-box">
+    <table class="recent-table">
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Total Attendance</th>
+          <th>Present</th>
+          <th>Absent</th>
+          <th>Late</th>
+          <th>Attendance %</th>
+          
+        </tr>
+      </thead>
+      <tbody>
+        {% for subject in subjects %}
+        <tr>
+          <td>{{ subject.name }}</td>
+          <td>{{ subject.total_classes }}</td>
+          <td class="present">{{ subject.present_count }}</td>
+          <td class="absent">{{ subject.absent_count }}</td>
+          <td class="late">{{ subject.late_count }}</td>
+          <td>{{ subject.attendance_percentage }}%</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="empty-row">No subjects assigned yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+
+{% endblock %}

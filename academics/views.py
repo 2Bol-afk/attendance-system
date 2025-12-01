@@ -27,7 +27,8 @@ def add_subject(request):
     if request.method == 'POST':
         form = SubjectForm(request.POST)
         if form.is_valid():
-            form.save()
+            subject = form.save()
+            messages.success(request,f'Subject {subject.subject_code} created successfully.')
     return redirect('academics:manage_subjects')
 
 def edit_subject(request, subject_id):
@@ -36,12 +37,14 @@ def edit_subject(request, subject_id):
         form = SubjectForm(request.POST, instance=subject)
         if form.is_valid():
             form.save()
+        messages.success(request,f"Subject {subject.subject_code} updated successfully.")   
     return redirect('academics:manage_subjects')
 
 def delete_subject(request, subject_id):
     subject = get_object_or_404(Subject, id=subject_id)
     if request.method == 'POST':
         subject.delete()
+        messages.success(request,f'Subject {subject.subject_code} Deleted  successfully.')
     return redirect('academics:manage_subjects')
 
 
@@ -151,6 +154,7 @@ def mark_attendance(request):
                         'time': selected_time
                     }
                 )
+        messages.success(request, "Attendance has been successfully recorded!")
         return redirect(request.path + f"?offering={offering_id}&section={section or ''}&year={year or ''}&date={selected_date}&time={selected_time}")
 
     return render(request, 'dashboard/attendance.html', context)
@@ -158,30 +162,57 @@ def mark_attendance(request):
 
 
 def student_list(request):
-    # Get current logged-in teacher
     teacher = request.user.teacherprofile
 
-    # Get all subject offerings assigned to this teacher
+    # Get all offerings for this teacher
     offerings = SubjectOffering.objects.filter(teacher=teacher)
 
-    # Optional: allow filtering by offering
-    offering_id = request.GET.get('offering')
-    if offering_id:
-        offerings = offerings.filter(id=offering_id)
+    # Get filters from GET request
+    offering_id = request.GET.get('offering')  # can be empty string
+    selected_year = request.GET.get('year')
+    selected_section = request.GET.get('section')
+    selected_status = request.GET.get('status')
 
-    # Collect the student queryset
-    # Assuming StudentProfile has 'year' and/or 'subjects' relationship
-    # Here we fetch all students in the years of the offerings
-    years = offerings.values_list('year', flat=True).distinct()
-    students = StudentProfile.objects.filter(year__in=years).distinct()
+    selected_offering = None
+    students = StudentProfile.objects.none()
 
-    # For the dropdown filter in template
+    if offering_id:  # Only filter by offering if not empty
+        selected_offering = get_object_or_404(SubjectOffering, id=offering_id)
+        students = StudentProfile.objects.filter(course=selected_offering.subject.course)
+    else:
+        # If no offering selected, show all students of courses the teacher teaches
+        course_ids = offerings.values_list('subject__course', flat=True).distinct()
+        students = StudentProfile.objects.filter(course__in=course_ids)
+
+    # Apply additional filters only if a value is selected
+    if selected_year:
+        students = students.filter(year=selected_year)
+    if selected_section:
+        students = students.filter(section=selected_section)
+    if selected_status:
+        students = students.filter(is_regular=selected_status)
+
+    # Dropdown options
+    sections = StudentProfile.objects.values_list('section', flat=True).distinct()
+    years = StudentProfile.objects.values_list('year', flat=True).distinct()
+    statuses = StudentProfile.objects.values_list('is_regular', flat=True).distinct()
+
     context = {
-        'students': students,
+        'students': students.distinct(),
         'offerings': offerings,
         'selected_offering': offering_id,
+        'sections': sections,
+        'years': years,
+        'selected_section': selected_section,
+        'selected_year': selected_year,
+        'statuses': statuses,
+        'selected_status': selected_status,
     }
+
     return render(request, 'dashboard/student_list.html', context)
+
+
+
 
 
 

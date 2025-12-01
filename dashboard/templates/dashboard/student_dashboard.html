@@ -1,0 +1,59 @@
+{% extends 'base_student.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <h2>Welcome, {{ student.first_name }} {{ student.last_name }}</h2>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-info">
+        <h3>{{ total_subjects }}</h3>
+        <p>Total Subjects</p>
+      </div>
+    </div>
+
+ <div class="stat-card">
+  <div class="stat-info">
+    <h3>{{ attendance_percentage }}%</h3>
+
+    <p style="margin-bottom:12px; font-weight:600;">Overall Attendance</p>
+
+    <div style="display:flex; gap:10px; flex-wrap: wrap;">
+      <span style="background:#16a34a; color:#fff; padding:5px 10px; border-radius:6px; font-weight:500;">
+        Present: {{ attendance_data.present }}
+      </span>
+      <span style="background:#dc2626; color:#fff; padding:5px 10px; border-radius:6px; font-weight:500;">
+        Absent: {{ attendance_data.absent }}
+      </span>
+      <span style="background:orange; color:#fff; padding:5px 10px; border-radius:6px; font-weight:500;">
+        Late: {{ attendance_data.late }}
+      </span>
+    </div>
+  </div>
+</div>
+
+  </div>
+
+  <!-- Subjects Quick Links -->
+  <div class="quick-actions">
+    <h3>Your Subjects</h3>
+    <div class="actions-row">
+      {% for subject in subjects %}
+      <div class="action-card">
+        <p>{{ subject.name }}</p>
+        <a href="#" class="add-student-btn">View Attendance</a>
+      </div>
+      {% empty %}
+      <p>No subjects assigned.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

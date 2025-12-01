@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Student Details Report{% endblock %}
+
+{% block content %}
+
+
+<div class="dashboard-container">
+
+  <div class="dashboard-header">
+    <h2>Student Details Report</h2>
+  </div>
+
+  <!-- Filter Form -->
+  <form method="get" class="filter-form">
+    <div class="form-group">
+      <label>Course:</label>
+      <select name="course">
+        <option value="">All Courses</option>
+        {% for course in courses %}
+          <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Year:</label>
+      <select name="year">
+        <option value="">All Years</option>
+        {% for code, name in year_levels %}
+          <option value="{{ code }}" {% if selected_year == code %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Section:</label>
+      <select name="section">
+        <option value="">All Sections</option>
+        {% for code, name in sections %}
+          <option value="{{ code }}" {% if selected_section == code %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group filter-button">
+      <button type="submit" class="add-student-btn">Filter</button>
+    </div>
+  </form>
+
+    <div class="search-container">
+  <input type="text" class="search-input universal-search" 
+         placeholder="Search anything (name, course, section, subject...)">
+</div>
+  <!-- Student List -->
+  <div class="student-list-box">
+    {% for student in students %}
+      <div class="student-card">
+        <h3>{{ student.full_name }}</h3>
+        <p><strong>ID:</strong> {{ student.student_ID }}</p>
+        <p><strong>Email:</strong> {{ student.user.email }}</p>
+       <p><strong>Course:</strong>
+    {% if student.course %}
+        {{ student.course.name }}
+    {% else %}
+        -
+    {% endif %}
+</p>
+<p><strong>Year & Section:</strong>
+    {% if student.year %}{{ student.year }}{% else %}-{% endif %}
+    -
+    {% if student.section %}{{ student.section }}{% else %}-{% endif %}
+</p>
+
+        <ul>
+          {% if student.subjects.all %}
+            {% for subj in student.subjects.all %}
+              <li>{{ subj.subject_code }} - {{ subj.name }} ({{ subj.semester_number }})</li>
+            {% endfor %}
+          {% else %}
+            <li>No subjects enrolled.</li>
+          {% endif %}
+        </ul>
+      </div>
+    {% empty %}
+      <p>No students found.</p>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

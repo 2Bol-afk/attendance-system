@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Parent & Children Report{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/report.css' %}">
+
+<div class="dashboard-container">
+
+    <!-- Header -->
+    <div class="dashboard-header">
+        <h2>Parent & Children Report</h2>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="filter-form">
+
+    <!-- Course Filter -->
+    <div class="form-group">
+        <label>Course:</label>
+        <select name="course">
+    <option value="">All</option>
+    {% for course in courses %}
+        <option value="{{ course.id }}" {% if course.id|stringformat:"s" == selected_course %}selected{% endif %}>
+            {{ course.name }}
+        </option>
+    {% endfor %}
+</select>
+    </div>
+
+    <!-- Year Filter -->
+    <div class="form-group">
+        <label>Year:</label>
+        <select name="year">
+    <option value="">All</option>
+    {% for y in year_levels %}
+        <option value="{{ y.0 }}" {% if y.0 == selected_year %}selected{% endif %}>
+            {{ y.1 }}
+        </option>
+    {% endfor %}
+</select>
+        </div>
+
+    <!-- Section Filter -->
+    <div class="form-group">
+        <label>Section:</label>
+        <select name="section">
+    <option value="">All</option>
+    {% for s in sections %}
+        <option value="{{ s.0 }}" {% if s.0 == selected_section %}selected{% endif %}>
+            {{ s.1 }}
+        </option>
+    {% endfor %}
+</select>
+    </div>
+
+    <div class="form-group filter-button">
+      <button type="submit" class="add-student-btn">Filter</button>
+    </div>
+</form>
+
+    <!-- Report Table -->
+    <div class="attendance-box">
+            <div class="search-container">
+            <input type="text" class="search-input universal-search" 
+                    placeholder="Search anything (name, course, section, subject...)">
+            </div>
+
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Parent Name</th>
+                    <th>Parent Email</th>
+                    <th>Contact Number</th>
+                    <th>Student ID</th>
+                    <th>Student Name</th>
+                    <th>Student Email</th>
+                    <th>Course</th>
+                    <th>Year</th>
+                    <th>Section</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for parent in parents %}
+                    {% if parent.filtered_children %}
+                        {% for child in parent.filtered_children %}
+                            <tr>
+                                <td>{{ parent.first_name }} {{ parent.last_name }}</td>
+                                <td>{{ parent.user.email }}</td>
+                                <td>{{ parent.contact_number|default:"N/A" }}</td>
+
+                                <td>{{ child.student_ID }}</td>
+                                <td>{{ child.first_name }} {{ child.last_name }}</td>
+                                <td>{{ child.user.email }}</td>
+
+                                <td>
+                                    {% if child.course %}
+                                        {{ child.course.name }}
+                                    {% else %}
+                                        No Course
+                                    {% endif %}
+                                </td>
+
+                                <td>{{ child.year }}</td>
+                                <td>{{ child.section|upper }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td>{{ parent.first_name }} {{ parent.last_name }}</td>
+                            <td>{{ parent.user.email }}</td>
+                            <td>{{ parent.contact_number|default:"N/A" }}</td>
+
+                            <!-- No children available -->
+                            <td colspan="6" class="empty-row">No children match filters</td>
+                        </tr>
+                    {% endif %}
+                {% empty %}
+                    <tr>
+                        <td colspan="9" class="empty-row">No parent records found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

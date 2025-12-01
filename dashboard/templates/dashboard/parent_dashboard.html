@@ -1,0 +1,83 @@
+{% extends 'base_parent.html' %}
+{% block title %}Parent Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <h2>Welcome, {{ request.user.first_name }}</h2>
+  </div>
+
+  <!-- Stats Cards: One per child -->
+  <div class="stats-row">
+    {% for child in children_summary %}
+    <div class="stat-card">
+      <div class="stat-info">
+        <h3>{{ child.student.full_name }}</h3>
+        <p>Overall Attendance: {{ child.attendance_percentage }}%</p>
+
+        <a href="{% url 'dashboard:student_attendance' child.student.student_ID %}" class="view-link">
+          View Attendance
+        </a>
+      </div>
+    </div>
+    {% empty %}
+    <p>No children assigned yet.</p>
+    {% endfor %}
+  </div>
+
+  <!-- Table: Children & Enrolled Subjects -->
+  <div class="attendance-box">
+    <h3>Children & Enrolled Subjects</h3>
+    <table class="recent-table">
+      <thead>
+        <tr>
+          <th>Student Name</th>
+          <th>Course / Year</th>
+          <th>Section</th>
+          <th>Subjects Enrolled</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for child in children_summary %}
+        <tr>
+          <td>{{ child.student.full_name }}</td>
+          <td>
+  {% if child.student.course %}
+    {{ child.student.course.name }} - {{ child.student.year }}
+  {% else %}
+    {{ child.student.year|default:"N/A" }}
+  {% endif %}
+</td>
+
+
+          <td>{{ child.student.section }}</td>
+          <td>
+  <ul>
+    {% for subject in child.student.subjects.all %}
+      <li>{{ subject.name }}</li>
+    {% empty %}
+      <li>No subjects assigned</li>
+    {% endfor %}
+  </ul>
+</td>
+
+          <td>
+            <a href="{% url 'dashboard:student_attendance' child.student.student_ID %}" class="add-student-btn">
+              View Attendance
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="empty-row">No children found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

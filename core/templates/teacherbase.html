@@ -254,6 +254,24 @@
       font-weight: 600;
       color: #111827;
     }
+    .error-box {
+  background-color: #fee2e2; /* light red */
+  border-left: 5px solid #dc2626; /* red-600 */
+  padding: 12px 15px;
+  border-radius: 8px;
+  color: #b91c1c; /* red-700 */
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+.info-note {
+    background-color: #f0f8ff;
+    border-left: 4px solid #1e90ff;
+    padding: 10px;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    color: #333;
+}
+
 
     /* Responsive */
     @media(max-width: 1024px) {
@@ -314,9 +332,10 @@
         Home
       </a>
       <a href="{% url 'academics:attendance' %}" class="{% if request.path == '/teacher/attendance/' %}active{% endif %}">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-          <path fill-rule="evenodd" d="M7.502 6h7.128A3.375 3.375 0 0118 9.375v9.375a3 3 0 003-3V6.108c0-1.505-1.125-2.811-2.664-2.94a48.972 48.972 0 00-.673-.05A3 3 0 0015 1.5h-1.5a3 3 0 00-2.663 1.618c-.225.015-.45.032-.673.05C8.662 3.295 7.554 4.542 7.502 6zM13.5 3A1.5 1.5 0 0012 4.5h4.5A1.5 1.5 0 0015 3h-1.5z" clip-rule="evenodd" />
-          <path fill-rule="evenodd" d="M3 9.375C3 8.339 3.84 7.5 4.875 7.5h9.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-9.75A1.875 1.875 0 013 20.625V9.375zm9.586 4.594a.75.75 0 00-1.172-.938l-2.476 3.096-.908-.907a.75.75 0 00-1.06 1.06l1.5 1.5a.75.75 0 001.116-.062l3-3.75z" clip-rule="evenodd" />
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+             class="bi bi-calendar2-check-fill" viewBox="0 0 16 16">
+          <path
+            d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5m9.954 3H2.545c-.3 0-.545.224-.545.5v1c0 .276.244.5.545.5h10.91c.3 0 .545-.224.545-.5v-1c0-.276-.244-.5-.546-.5m-2.6 5.854a.5.5 0 0 0-.708-.708L7.5 10.793 6.354 9.646a.5.5 0 1 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0z" />
         </svg>
         Attendance
       </a>
@@ -332,6 +351,31 @@
         </svg>
         Student List
       </a>
+      <!-- Reports Dropdown -->
+<div class="menu-dropdown">
+  <a href="#" class="dropdown-toggle {% if active == 'reports' %}active{% endif %}">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard-data-fill" viewBox="0 0 16 16">
+      <path d="M6.5 0A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0zm3 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5z"/>
+      <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1A2.5 2.5 0 0 1 9.5 5h-3A2.5 2.5 0 0 1 4 2.5zM10 8a1 1 0 1 1 2 0v5a1 1 0 1 1-2 0zm-6 4a1 1 0 1 1 2 0v1a1 1 0 1 1-2 0zm4-3a1 1 0 0 1 1 1v3a1 1 0 1 1-2 0v-3a1 1 0 0 1 1-1"/>
+    </svg>
+    Reports
+    <span class="arrow">&#9662;</span#
+  </a>
+
+  <!-- Dropdown Items -->
+  <div class="dropdown-menu">
+    <a href="{% url 'reports:attendance_overview' %}">Subject Attendance Report</a>
+    <a href="{% url 'reports:attendance_summary' %}">Attendance Summary</a>
+    <a href="{% url 'reports:detailed_attendance' %}">Student Detailed Report</a>
+  </div>
+</div>
+
+      <a href="{% url 'accounts:logout' %}"class="{% if active == 'profile' %}active{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-logout"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" /><path d="M9 12h12l-3 -3" /><path d="M18 15l3 -3" /></svg>
+        Logout
+      </a>
+
+
     </div>
   </div>
 
@@ -341,6 +385,6 @@
     <!-- Dynamic page content goes here -->
     {% endblock %}
   </div>
-
+<script src="{% static 'js/reports.js' %}"></script>
 </body>
 </html>

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Teacher Details Report{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/report.css' %}">
+
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h2>Teacher Details Report</h2>
+  </div>
+
+  <!-- Filter Form -->
+  <form method="get" class="filter-form">
+    <div class="form-group">
+      <label>Course:</label>
+      <select name="course">
+        <option value="">All Courses</option>
+        {% for course in courses %}
+          <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Year:</label>
+      <select name="year">
+        <option value="">All Years</option>
+        {% for code, name in year_levels %}
+          <option value="{{ code }}" {% if selected_year == code %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group filter-button ">
+      <button type="submit" class="add-student-btn">Filter</button>
+    </div>
+  </form>
+
+  <!-- Teacher Table -->
+  <div class="attendance-box">
+        <div class="search-container">
+  <input type="text" class="search-input universal-search" 
+         placeholder="Search anything (name, course, section, subject...)">
+</div>
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Teacher Name</th>
+          <th>Email</th>
+          <th>Assigned Subject</th>
+          <th>Year</th>
+          <th>School Year</th>
+          <th>Section A</th>
+          <th>Section B</th>
+          <th>Section C</th>
+          <th>Section D</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in teachers_data %}
+          {% for so in t.subjects_info %}
+            <tr>
+              {% if forloop.first %}
+                <td rowspan="{{ t.rowspan }}">{{ t.teacher.first_name }}{% if t.teacher.middle_name %} {{ t.teacher.middle_name }}{% endif %} {{ t.teacher.last_name }}</td>
+                <td rowspan="{{ t.rowspan }}">{{ t.teacher.user.email }}</td>
+              {% endif %}
+              <td>{{ so.subject.subject_code }} - {{ so.subject.name }}</td>
+              <td>{{ so.year }}</td>
+              <td>{{ so.school_year }}</td>
+              <td>{{ so.section_counts.a }}</td>
+              <td>{{ so.section_counts.b }}</td>
+              <td>{{ so.section_counts.c }}</td>
+              <td>{{ so.section_counts.d }}</td>
+            </tr>
+          {% endfor %}
+        {% empty %}
+          <tr>
+            <td colspan="9">No data found.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends 'base_student.html' %}
+{% block title %}Attendance Overview{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <h2>Attendance Overview</h2>
+  </div>
+
+  <!-- Filters -->
+  <form method="GET" class="filter-form" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+    <div>
+      <label for="subject">Subject:</label>
+      <select name="subject" id="subject">
+        <option value="">-- Select Subject --</option>
+        {% for subject in subjects %}
+        <option value="{{ subject.id }}" {% if selected_subject and selected_subject.id == subject.id %}selected{% endif %}>
+          {{ subject.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label for="start_date">Start Date:</label>
+      <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
+    </div>
+
+    <div>
+      <label for="end_date">End Date:</label>
+      <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
+    </div>
+
+    <div style="align-self: flex-end;">
+      <button type="submit" class="add-student-btn">View</button>
+    </div>
+  </form>
+
+  <!-- Attendance Table -->
+  <div class="attendance-box">
+    <table class="recent-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in attendance_records %}
+        <tr>
+          <td>{{ record.date|date:"M d, Y" }}</td>
+          <td>{{ record.time|time:"H:i" }}</td>
+          <td>
+            <span class="status-label 
+              {% if record.status == 'present' %}present
+              {% elif record.status == 'absent' %}absent
+              {% else %}late{% endif %}">
+              {{ record.status|title }}
+            </span>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3" class="empty-row">No attendance records found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+document.getElementById('subject').addEventListener('change', function() {
+    // Keep current start and end date values
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+
+    // Create a new URLSearchParams object with current values
+    const params = new URLSearchParams();
+    if (this.value) params.set('subject', this.value);
+    if (startDate) params.set('start_date', startDate);
+    if (endDate) params.set('end_date', endDate);
+
+    // Reload the page with updated query params
+    window.location.search = params.toString();
+});
+</script>
+
+<style>
+.status-label {
+  padding: 5px 10px;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 500;
+  display: inline-block;
+}
+.status-label.present { background-color: #16a34a; }
+.status-label.absent { background-color: #dc2626; }
+.status-label.late { background-color: orange; }
+.empty-row {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+}
+.filter-form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.filter-form input, .filter-form select {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+</style>
+{% endblock %}

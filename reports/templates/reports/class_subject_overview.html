@@ -1,0 +1,96 @@
+{% extends 'teacherbase.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/report.css' %}">
+<div class="dashboard-container">
+    
+
+  <div class="dashboard-header">
+    <h2>Class / Subject Overview</h2>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" class="filter-form mb-4">
+    <div class="form-group">
+        <label >Semester</label>
+        <select name="semester">
+      <option value="">All Semesters</option>
+      {% for sem in semesters %}
+        <option value="{{ sem }}" {% if semester_filter == sem %}selected{% endif %}>{{ sem }}</option>
+      {% endfor %}
+    </select>
+
+    </div>
+    
+<div class="form-group">
+    <label for="">Section</label>
+    <select name="section">
+    <option value="">All Sections</option>
+    {% for value, display in sections %}
+        <option value="{{ value }}" {% if section_filter == value %}selected{% endif %}>{{ display }}</option>
+    {% endfor %}
+</select>
+</div>
+
+
+<div class="form-group">
+    <label for="">Year</label>
+    <select name="year">
+      <option value="">All Years</option>
+      {% for y in years %}
+        <option value="{{ y }}" {% if year_filter == y %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+</div>
+    
+
+   <div class="form-group filter-button">
+      <button type="submit" class="add-student-btn">Filter</button>
+    </div>
+  </form>
+<div class="attendance-box">
+    <div class="search-container">
+  <input type="text" class="search-input universal-search" 
+         placeholder="Search anything (name, course, section, subject...)">
+</div>
+  <!-- Table -->
+  <table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Course</th>
+            <th>Subject</th>
+            {% for value, display in sections %}
+                <th>Section {{ display }}</th>
+            {% endfor %}
+            <th>Total Students</th>
+            <th>Semester</th>
+            <th>Year</th>
+            <th>School Year</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in data %}
+        <tr>
+            <td>{{ row.course }}</td>
+            <td>{{ row.subject }}</td>
+            {% for count in row.section_counts_list %}
+                <td>{{ count }}</td>
+            {% endfor %}
+            <td>{{ row.total_students }}</td>
+            <td>{{ row.semester }}</td>
+            <td>{{ row.year }}</td>
+            <td>{{ row.school_year }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="{{ colspan }}">No data found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+</div>
+</div>
+{% endblock %}

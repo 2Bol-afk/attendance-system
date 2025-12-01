@@ -1,6 +1,8 @@
 {% extends 'teacherbase.html' %}
+{% load static  %}
 
 {% block content %}
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 <div class="dashboard-container">
   <div class="dashboard-header">
     <h2>Home</h2>
@@ -9,46 +11,139 @@
   <!-- Stats -->
   <div class="stats-row">
     <div class="stat-card">
-      <div class="stat-icon"><img src="" alt="Students"></div>
+      <div class="stat-icon"><img src="{% static 'images/studentlogo.jpg' %}" alt="Students"></div>
       <div class="stat-info">
         <h3>{{ total_students }}</h3>
         <p>Total Students</p>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon"><img src=" alt="Attendance"></div>
+      <div class="stat-icon"><img src="{% static 'images/markattendance.jpg' %}" alt="Attendance"></div>
       <div class="stat-info">
         <h3>{{ total_attendance }}</h3>
         <p>Attendance Today</p>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon"><img src="" alt="Subjects"></div>
+      <div class="stat-icon"><img src="{% static 'images/book.png' %}" alt="Subjects"></div>
       <div class="stat-info">
         <h3>{{ total_subjects }}</h3>
         <p>Subjects Assigned</p>
       </div>
     </div>
-  </div>
-
-  <!-- Quick Actions -->
-  <div class="quick-actions">
-    <h3>Quick Actions</h3>
-    <div class="actions-row">
+    <div class="stat-card">
       <div class="action-card">
-        <img src="" alt="Add Student">
-        <p>Add Student</p>
-      </div>
-      <div class="action-card">
-        <img src=" alt="Mark Attendance">
-        <p>Mark Attendance</p>
-      </div>
-      <div class="action-card">
-        <img src=" alt="Assign Subject">
-        <p>Assign Subject</p>
+        <img src="{% static 'images/markattendance.jpg' %}" alt="Mark Attendance">
+        <a href="{% url 'academics:attendance' %}" class="view-link"><p>Mark Attendance</p></a>
       </div>
     </div>
   </div>
+  <div class="bottom-section">
+    <div class="attendance-box" id="chart-section">
+      <h3>Attendance Overview</h3>
+ 
+  <!-- Attendance Overview Chart -->
+
+    <form method="GET" id="filterForm" style="margin-bottom:15px; display:flex; gap:10px; align-items:center;">
+      <label>Subject:</label>
+      <select name="subject" onchange="submitWithHash()" style="padding:5px 8px;">
+        {% for id, code in subjects_for_teacher %}
+          <option value="{{ id }}" {% if id == selected_subject_id %}selected{% endif %}>
+            {{ code }}
+          </option>
+        {% endfor %}
+      </select>
+    </form>
+
+    <div class="pie-chart-container" style="width:300px; height:300px;">
+      <canvas id="attendancePieChart"></canvas>
+    </div>
+  </div>
+
+
+
+
+  <!-- Recent Attendance -->
+  <div class="recent-box">
+    <h3>Recent Attendance</h3>
+    <table class="recent-table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Subject</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if recent_attendance_list %}
+          {% for attendance in recent_attendance_list %}
+            <tr>
+              <td>{{ attendance.student.first_name }} {{ attendance.student.last_name }}</td>
+              <td>{{ attendance.subject_offering.subject.subject_code }}</td>
+              <td class="{% if attendance.status == 'present' %}present{% elif attendance.status == 'absent' %}absent{% else %}late{% endif %}">
+                {{ attendance.get_status_display }}
+              </td>
+              <td>{{ attendance.date|date:"M d, Y" }}</td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="4">No attendance records found.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+    
+  </div>
+    </div>
 
 </div>
+ <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+  // Pie chart data
+  const pieData = {
+      labels: ['Present', 'Absent', 'Late'],
+      datasets: [{
+          data: [
+              {{ attendance_data.present }},
+              {{ attendance_data.absent }},
+              {{ attendance_data.late }}
+          ],
+          backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56']
+      }]
+  };
+
+  new Chart(document.getElementById('attendancePieChart'), {
+      type: 'pie',
+      data: pieData,
+      options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+              legend: {
+                  position: 'bottom'
+              }
+          }
+      }
+  });
+
+  function submitWithHash() {
+      const form = document.getElementById('filterForm');
+      const formData = new FormData(form);
+      const params = new URLSearchParams(formData);
+      window.location.href = '?' + params.toString() + '#chart-section';
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+      if (window.location.hash === '#chart-section') {
+          const chartSection = document.getElementById('chart-section');
+          if (chartSection) {
+              setTimeout(() => {
+                  chartSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
+          }
+      }
+  });
+  </script>
 {% endblock %}

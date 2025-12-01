@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Attendance Report{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/report.css' %}">
+
+<div class="dashboard-container">
+
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h2>Attendance Report</h2>
+  </div><!-- Summary Table -->
+<div class="attendance-summary-box">
+  <h3>Attendance Summary</h3>
+  <table class="report-table">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Course</th>
+        <th>Total Present</th>
+        <th>Total Absent</th>
+        <th>Total Late</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for student in summary_data %}
+        <tr>
+          <td>{{ student.full_name }}</td>
+          <td>{{ student.student__course__name }}</td>
+          <td>{{ student.total_present }}</td>
+          <td>{{ student.total_absent }}</td>
+          <td>{{ student.total_late }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="5" class="empty-row">No records found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+
+  <!-- Filter Form -->
+  <form method="get" class="filter-form">
+
+    <!-- Course -->
+    <div class="form-group">
+      <label>Course</label>
+      <select name="course">
+        <option value="">-- Select Course --</option>
+        {% for course in courses %}
+          <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>
+            {{ course.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Year -->
+    <div class="form-group">
+      <label>Year</label>
+      <select name="year">
+        <option value="">All Years</option>
+        {% for y_code, y_name in year_levels %}
+          <option value="{{ y_code }}" {% if selected_year == y_code %}selected{% endif %}>{{ y_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Section -->
+<div class="form-group">
+  <label>Section</label>
+  <select name="section">
+    <option value="">All Sections</option>
+    {% for sec_code, sec_name in sections %}
+      <option value="{{ sec_code }}" {% if selected_section == sec_code %}selected{% endif %}>
+        {{ sec_name }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
+
+    <!-- Semester -->
+    <div class="form-group">
+      <label>Semester</label>
+      <select name="semester">
+        <option value="">All</option>
+        {% for sem_code, sem_name in semesters %}
+          <option value="{{ sem_code }}" {% if selected_semester == sem_code %}selected{% endif %}>{{ sem_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Subject -->
+    <div class="form-group">
+      <label>Subject</label>
+      <select name="subject">
+        <option value="">All Subjects</option>
+        {% for subj in subjects %}
+          <option value="{{ subj.id }}" {% if selected_subject == subj.id|stringformat:"s" %}selected{% endif %}>
+            {{ subj.subject_code }} - {{ subj.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Filter Button -->
+    <div class="form-group filter-button">
+      <button type="submit" class="add-student-btn">Filter</button>
+    </div>
+
+  </form>
+
+  <!-- Report Table -->
+  <div class="attendance-box">
+    <div class="search-container">
+  <input type="text" class="search-input universal-search" 
+         placeholder="Search anything (name, course, section, subject...)">
+</div>
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Course</th>
+          <th>Year</th>
+          <th>Section</th>
+          <th>Subject</th>
+          <th>Semester</th>
+          <th>School Year</th>
+          <th>Date</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in report_data %}
+          <tr>
+            <td>{{ record.student.full_name }}</td>
+            <td>{{ record.student.course.name }}</td>
+            <td>{{ record.subject_offering.year }}</td>
+            <td>{{ record.student.section }}</td>
+            <td>{{ record.subject_offering.subject.subject_code }} - {{ record.subject_offering.subject.name }}</td>
+            <td>{{ record.subject_offering.subject.semester_number }}</td>
+            <td>{{ record.subject_offering.school_year }}</td>
+            <td>{{ record.date }}</td>
+            <td class="{% if record.status == 'present' %}present{% elif record.status == 'absent' %}absent{% else %}late{% endif %} capitalize">
+              {{ record.status }}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" class="empty-row">No records found.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
