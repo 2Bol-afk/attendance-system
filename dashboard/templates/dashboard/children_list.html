@@ -34,7 +34,7 @@
 
           <td>{{ child.section }}</td>
           <td>
-            <a href="{% url 'dashboard:student_attendance' child.student_ID %}" class="add-student-btn">View Attendance</a>
+            <a href="{% url 'dashboard:student_attendances' child.student_ID %}" class="add-student-btn">View Attendance</a>
           </td>
         </tr>
         {% empty %}

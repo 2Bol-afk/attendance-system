@@ -8,6 +8,30 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <title>{% block title %}Student Dashboard{% endblock %}</title>
 </head>
+<style>
+  /* QUICK ACTION CARD BUTTON FIX */
+.quick-actions .action-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+  padding: 15px;
+}
+
+.quick-actions .action-card p {
+  margin-bottom: 10px;
+  font-weight: 600;
+  word-wrap: break-word; /* prevent long text from overflowing */
+}
+
+.quick-actions .action-card .add-student-btn {
+  padding: 6px 12px; /* smaller padding */
+  font-size: 0.875rem; /* smaller font */
+  display: inline-block; /* ensure it doesn’t stretch */
+  margin-top: auto; /* push button to bottom */
+}
+
+</style>
 <body>
   
   <!-- SIDEBAR -->
@@ -29,7 +53,7 @@
         </svg>
         Subjects
       </a>
-      <a href="{% url 'dashboard:subject_attendance' %}"class="{% if active == 'profile' %}active{% endif %}">
+      <a href="{% url 'dashboard:subject_attendance' %}" class="{% if active == 'profile' %}active{% endif %}">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
              class="bi bi-calendar2-check-fill" viewBox="0 0 16 16">
           <path
@@ -54,5 +78,6 @@
   </div>
 
   <script src="{% static 'js/scripts.js' %}"></script>
+  <script src="{% static 'js/reports.js' %}"></script>
 </body>
 </html>

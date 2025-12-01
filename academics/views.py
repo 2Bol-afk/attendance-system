@@ -8,10 +8,12 @@ from django.utils import timezone
 from datetime import datetime,date
 from django.contrib import messages
 from django.db.models import Count, Q
+from django.contrib.auth.decorators import  login_required
 import calendar 
 
 from  accounts.constants import YEAR_LEVEL_CHOICES
 # Manage Subjects
+@login_required
 def manage_subject(request):
     subjects = Subject.objects.all()
     courses = Course.objects.all()
@@ -22,7 +24,7 @@ def manage_subject(request):
         'courses': courses,
         'active': 'subjects',
     })
-
+@login_required
 def add_subject(request):
     if request.method == 'POST':
         form = SubjectForm(request.POST)
@@ -30,7 +32,7 @@ def add_subject(request):
             subject = form.save()
             messages.success(request,f'Subject {subject.subject_code} created successfully.')
     return redirect('academics:manage_subjects')
-
+@login_required
 def edit_subject(request, subject_id):
     subject = get_object_or_404(Subject, id=subject_id)
     if request.method == 'POST':
@@ -39,7 +41,7 @@ def edit_subject(request, subject_id):
             form.save()
         messages.success(request,f"Subject {subject.subject_code} updated successfully.")   
     return redirect('academics:manage_subjects')
-
+@login_required
 def delete_subject(request, subject_id):
     subject = get_object_or_404(Subject, id=subject_id)
     if request.method == 'POST':
@@ -49,6 +51,7 @@ def delete_subject(request, subject_id):
 
 
 # Assign Teacher
+@login_required
 def assign_teacher(request):
     teacher_list = TeacherProfile.objects.all()
     offerings = SubjectOffering.objects.all()
@@ -62,27 +65,69 @@ def assign_teacher(request):
         'active': 'assign_subject',
     })
 
+@login_required
 def add_assignment(request):
     if request.method == 'POST':
         form = AssignSubjectForm(request.POST)
         if form.is_valid():
-            form.save()
+            offering = form.save()  # Save the SubjectOffering first
+            
+            # Automatically enroll students
+            # Students in the same course as the subject and same year
+            students_to_add = StudentProfile.objects.filter(
+                course=offering.subject.course,
+                year=offering.year
+            )
+            
+            for student in students_to_add:
+                student.subjects.add(offering.subject)  # Add the subject to student's subjects
+            
+            messages.success(
+                request,
+                f"{offering.subject.subject_code} assigned to {offering.teacher.first_name} {offering.teacher.last_name} and enrolled {students_to_add.count()} students."
+            )
+            
     return redirect('academics:assign_teacher')
 
+@login_required
 def edit_assignment(request, offering_id):
     offering = get_object_or_404(SubjectOffering, id=offering_id)
     if request.method == 'POST':
+        old_subject = offering.subject
+        old_year = offering.year
         form = AssignSubjectForm(request.POST, instance=offering)
         if form.is_valid():
-            form.save()
+            offering = form.save()  # Save updated assignment
+
+            # Remove old students who no longer match the assignment
+            old_students = StudentProfile.objects.filter(course=old_subject.course, year=old_year)
+            for student in old_students:
+                # Only remove if the student is no longer supposed to have this subject
+                if student.year != offering.year or student.course != offering.subject.course:
+                    student.subjects.remove(old_subject)
+
+            # Enroll all relevant students in the updated assignment
+            students_to_add = StudentProfile.objects.filter(
+                course=offering.subject.course,
+                year=offering.year
+            )
+            for student in students_to_add:
+                student.subjects.add(offering.subject)
+
+            messages.success(
+                request,
+                f"Assignment updated: {offering.subject.subject_code} assigned to {offering.teacher.first_name} {offering.teacher.last_name}. Enrolled {students_to_add.count()} students."
+            )
+            
     return redirect('academics:assign_teacher')
 
+@login_required
 def delete_assignment(request, offering_id):
     offering = get_object_or_404(SubjectOffering, id=offering_id)
     if request.method == 'POST':
         offering.delete()
     return redirect('academics:assign_teacher')
-
+@login_required
 def mark_attendance(request):
     teacher = request.user.teacherprofile
 
@@ -160,7 +205,7 @@ def mark_attendance(request):
     return render(request, 'dashboard/attendance.html', context)
 
 
-
+@login_required
 def student_list(request):
     teacher = request.user.teacherprofile
 
@@ -215,7 +260,7 @@ def student_list(request):
 
 
 
-
+@login_required
 def subject_assign(request):
     teacher = request.user.teacherprofile
 

@@ -64,8 +64,12 @@
     <div class="form-group filter-button">
       <button type="submit" class="add-student-btn">Filter</button>
     </div>
-    
+
+
   </form>
+      <div style="margin-bottom: 20px;">
+  <a href="{% url 'accounts:export_accounts_view' %}" class="add-student-btn">Export Accounts</a>
+</div>
 
   <!-- Students Table -->
   {% if selected_role == '' or selected_role == 'student' %}

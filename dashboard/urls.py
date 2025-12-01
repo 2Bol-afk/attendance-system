@@ -13,7 +13,7 @@ urlpatterns = [
     path('children/', views.children_list, name='children_list'),
 
     # Attendance overview per student
-    path('child/<str:student_id>/attendance/', views.student_attendance_overview, name='student_attendance'),
+    path('child/<str:student_id>/attendance/', views.parent_student_attendance_overview, name='student_attendances'),
 
     # Attendance details per subject
     path('child/<str:student_id>/attendance/<str:subject_id>/', views.attendance_detail_per_subject,name='attendance_detail_subject'),

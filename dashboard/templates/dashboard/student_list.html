@@ -9,7 +9,7 @@
  <form method="get" class="filter-container">
     <!-- Offering -->
     <div>
-      <label for="offering">Offering:</label>
+      <label for="offering">Subject:</label>
       <select name="offering" id="offering" onchange="this.form.submit()">
         <option value="" {% if not selected_offering %}selected{% endif %}>All</option>
         {% for offer in offerings %}

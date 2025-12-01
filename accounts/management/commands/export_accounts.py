@@ -37,10 +37,12 @@ class Command(BaseCommand):
                 })
 
         # --- Teachers (single sheet) ---
+        # --- Teachers (single sheet) ---
         teachers = TeacherProfile.objects.all()
         teacher_records = []
         for t in teachers:
-            subjects = ", ".join([s.subject_code for s in t.subjects.all()])
+            # Get the subject codes from the SubjectOffering
+            subjects = ", ".join([s.subject.subject_code for s in t.subjects.all()])
             teacher_records.append({
                 "First Name": t.first_name,
                 "Last Name": t.last_name,
@@ -48,6 +50,7 @@ class Command(BaseCommand):
                 "Email": t.user.email,
                 "Password": t.user.plain_password if hasattr(t.user, 'plain_password') else "N/A",
             })
+
 
         # --- Export to Excel ---
         with pd.ExcelWriter("school_accounts.xlsx") as writer:

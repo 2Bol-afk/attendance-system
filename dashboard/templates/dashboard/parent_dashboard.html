@@ -4,80 +4,121 @@
 {% block content %}
 <div class="dashboard-container">
 
-  <!-- Dashboard Header -->
   <div class="dashboard-header">
     <h2>Welcome, {{ request.user.first_name }}</h2>
   </div>
 
-  <!-- Stats Cards: One per child -->
+  <!-- Child & Subject Filters -->
+  <form method="GET" class="filter-form" style="margin-bottom: 20px;">
+    
+    <label>Select Child:</label>
+    <select name="child" onchange="this.form.submit()">
+      {% for child in children %}
+        <option value="{{ child.student_ID }}" {% if selected_child_id == child.student_ID %}selected{% endif %}>
+          {{ child.full_name }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <label>Select Subject:</label>
+    <select name="subject" onchange="this.form.submit()">
+      <option value="">-- All Subjects --</option>
+      {% for subj in subjects %}
+        <option value="{{ subj.id }}" {% if selected_subject_id == subj.id|stringformat:"s" %}selected{% endif %}>
+          {{ subj.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <!-- Top Stats -->
   <div class="stats-row">
-    {% for child in children_summary %}
     <div class="stat-card">
       <div class="stat-info">
-        <h3>{{ child.student.full_name }}</h3>
-        <p>Overall Attendance: {{ child.attendance_percentage }}%</p>
-
-        <a href="{% url 'dashboard:student_attendance' child.student.student_ID %}" class="view-link">
-          View Attendance
-        </a>
+        <h3>{{ total_subjects }}</h3>
+        <p>Total Subjects</p>
       </div>
     </div>
-    {% empty %}
-    <p>No children assigned yet.</p>
-    {% endfor %}
+
+    <div class="stat-card">
+      <div class="stat-info">
+        <h3>{{ attendance_percentage }}%</h3>
+        <p>Overall Attendance</p>
+        <div class="status-badges">
+          <span class="present-badge">Present: {{ attendance_data.present }}</span>
+          <span class="absent-badge">Absent: {{ attendance_data.absent }}</span>
+          <span class="late-badge">Late: {{ attendance_data.late }}</span>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Table: Children & Enrolled Subjects -->
-  <div class="attendance-box">
-    <h3>Children & Enrolled Subjects</h3>
-    <table class="recent-table">
-      <thead>
-        <tr>
-          <th>Student Name</th>
-          <th>Course / Year</th>
-          <th>Section</th>
-          <th>Subjects Enrolled</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for child in children_summary %}
-        <tr>
-          <td>{{ child.student.full_name }}</td>
-          <td>
-  {% if child.student.course %}
-    {{ child.student.course.name }} - {{ child.student.year }}
-  {% else %}
-    {{ child.student.year|default:"N/A" }}
-  {% endif %}
-</td>
+  <!-- Lower Section -->
+  <div class="bottom-section">
 
+    <!-- Attendance Pie Chart -->
+    <div class="attendance-box" style="max-width: 400px; margin-bottom: 20px;">
+      <h3>Attendance Overview</h3>
+      <div class="pie-chart-container" style="height: 250px;">
+        <canvas id="parentAttendanceChart"></canvas>
+      </div>
+    </div>
 
-          <td>{{ child.student.section }}</td>
-          <td>
-  <ul>
-    {% for subject in child.student.subjects.all %}
-      <li>{{ subject.name }}</li>
-    {% empty %}
-      <li>No subjects assigned</li>
-    {% endfor %}
-  </ul>
-</td>
+    <!-- Recent Attendance Table -->
+    <div class="attendance-box">
+      <h3>Recent Attendance</h3>
+      <table class="recent-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Subject</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in recent_attendance_list %}
+            <tr>
+              <td>{{ record.date|date:"M d, Y" }}</td>
+              <td>{{ record.subject_offering.subject.name }}</td>
+              <td class="{% if record.status == 'present' %}present{% elif record.status == 'absent' %}absent{% else %}late{% endif %}">
+                {{ record.status|title }}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="3">No attendance records found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-          <td>
-            <a href="{% url 'dashboard:student_attendance' child.student.student_ID %}" class="add-student-btn">
-              View Attendance
-            </a>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="5" class="empty-row">No children found.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
   </div>
 
 </div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('parentAttendanceChart');
+
+new Chart(ctx, {
+    type: 'pie',
+    data: {
+        labels: ['Present', 'Absent', 'Late'],
+        datasets: [{
+            data: [
+                {{ attendance_data.present }},
+                {{ attendance_data.absent }},
+                {{ attendance_data.late }}
+            ],
+            backgroundColor: ['#16a34a', '#dc2626', 'orange']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } }
+    }
+});
+</script>
+
 {% endblock %}

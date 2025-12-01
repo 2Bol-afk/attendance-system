@@ -321,7 +321,7 @@
   <!-- Sidebar -->
   <div class="left-container">
     <h1>Teacher</h1>
-    <h5>Welcome, {{ request.user.first_name }}</h5>
+
     
     <div class="menu">
       <a href="{% url 'dashboard:teacher_dashboard' %}" class="{% if request.path == '/teacher/' %}active{% endif %}">

@@ -9,6 +9,13 @@
     <h2>Assign Teachers</h2>
     <a href="#" class="add-subject-btn" id="openModalAssign">+ Assign Teacher</a>
   </div>
+      {% if messages %}
+  <div class="error-box">
+    {% for message in messages %}
+      {{ message }}
+    {% endfor %}
+  </div>
+{% endif %}
 
   <!-- Add Assign Teacher Modal -->
   <div id="assignModal" class="modal">

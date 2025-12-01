@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model,update_session_auth_hash,authenti
 from django.utils.crypto import get_random_string
 from django.contrib import messages
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse
+from django.http import JsonResponse,HttpResponse
 from django.views.decorators.http import require_GET
 from academics.models import Semester, Subject, SubjectOffering,Course
 from django.utils.text import slugify
@@ -15,6 +15,8 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import SetPasswordForm
 from accounts.constants import YEAR_LEVEL_CHOICES, SECTION_CHOICES
+from django.core.management import call_command
+import os
 
 
 
@@ -47,6 +49,7 @@ def generate_unique_email(first_name, last_name, domain='CSS.com'):
 # -------------------------------
 # Teacher List / Dashboard
 # -------------------------------
+@login_required
 def manage_teacher(request):
     teachers = TeacherProfile.objects.select_related('user').all()
     # Provide empty forms so the add-teacher modal can render its input fields
@@ -64,6 +67,7 @@ def manage_teacher(request):
 # -------------------------------
 # Add Teacher
 # -------------------------------
+@login_required
 def add_teacher(request):
     try:
         if request.method == "POST":
@@ -75,7 +79,7 @@ def add_teacher(request):
             teacher_first_name = profile_form.cleaned_data['first_name']
             teacher_last_name = profile_form.cleaned_data['last_name']
             teacher_email,teacher_username = generate_unique_email(
-                teacher_first_name,teacher_last_name,domain="parent.isufst.com"
+                teacher_first_name,teacher_last_name,domain="teacher.isufst.com"
             )
 
             user = user_form.save(commit=False)
@@ -115,6 +119,7 @@ def add_teacher(request):
 # -------------------------------
 # Edit Teacher
 # -------------------------------
+@login_required
 def edit_teacher(request, teacher_id):
     teacher = get_object_or_404(TeacherProfile, id=teacher_id)
 
@@ -165,7 +170,7 @@ def manage_student(request):
         'students': students
     })
 
-
+@login_required
 
 def add_student(request):
     semester = request.POST.get('semester', '1st')
@@ -278,7 +283,7 @@ def add_student(request):
         'forms_list': forms_list,
         'parents': parents,
     })
-
+@login_required
 def edit_student(request, student_id):
     student_profile = get_object_or_404(StudentProfile, pk=student_id)
     
@@ -392,13 +397,14 @@ def edit_student(request, student_id):
 
 
 
-
+@login_required
 def delete_student(request, student_id):
     student = get_object_or_404(StudentProfile, student_ID=student_id.strip())
     student_name = f"{student.first_name} {student.last_name}"
     student.delete()
     messages.success(request, f"Student {student_name} has been successfully deleted.")
     return redirect('accounts:manage_student')
+@login_required
 def load_subjects(request):
     semester = request.GET.get('semester')
     course_id = request.GET.get('course')
@@ -417,7 +423,7 @@ def load_subjects(request):
 
     data = [{'id': s.id, 'subject_code': s.subject_code, 'name': s.name} for s in subjects]
     return JsonResponse({'subjects': data})
-
+@login_required
 def manage_parents(request):
     parents = ParentProfile.objects.all()
     return render(request,'dashboard/manage_parents.html',{
@@ -425,7 +431,7 @@ def manage_parents(request):
         'user_form': parentUserForm(),
         'parent_form': parentProfileForm(),
     })
-
+@login_required
 def add_parent(request):
     try:
         if request.method == 'POST':
@@ -465,7 +471,7 @@ def add_parent(request):
         'parent_form':parent_form,
         'parents': ParentProfile.objects.all()
     })
-
+@login_required
 def edit_parent(request,parent_id):
     parent = get_object_or_404(ParentProfile,id=parent_id)
 
@@ -483,7 +489,7 @@ def edit_parent(request,parent_id):
         'parent':parent,
         'parent_form': parent_form
     })
-
+@login_required
 def delete_parent(request, parent_id):
     parent = get_object_or_404(ParentProfile, id=parent_id)
     if request.method == "POST":
@@ -496,20 +502,26 @@ def delete_parent(request, parent_id):
 
 def change_password(request):
     if request.method == 'POST':
-        form = SetPasswordForm(user=request.user,data=request.POST)
+        form = SetPasswordForm(user=request.user, data=request.POST)
         if form.is_valid():
             user = form.save()
             user.first_login = False
             user.save()
             update_session_auth_hash(request, user)
-            messages.success(request,  "Password changes successfully!")
-            return redirect('dashboard:admin_dashboard')
+            messages.success(request, "Password changed successfully!")
+
+            # Role-based redirect
+            role_redirects = {
+                'admin': 'dashboard:admin_dashboard',
+                'teacher': 'dashboard:teacher_dashboard',
+                'student': 'dashboard:student_dashboard',
+                'parent': 'dashboard:dashboard',
+            }
+            return redirect(role_redirects.get(user.role, 'accounts:login'))
     else:
         form = SetPasswordForm(user=request.user)
 
-    return render(request, 'dashboard/change_password.html',{
-        'form':form
-    })
+    return render(request, 'dashboard/change_password.html', {'form': form})
 
 def custom_login(request):
     if request.method == 'POST':
@@ -517,8 +529,7 @@ def custom_login(request):
         password = request.POST.get('password', '')  # allow blank for first login
 
         user = authenticate(request, username=username, password=password)
-        print('Login attempt:', username, 'Password:', password)
-        print('User:', user)
+        
 
 
         if user:
@@ -549,8 +560,7 @@ def logout_view(request):
     logout(request)
     return redirect('accounts:login')
 
-
-
+@login_required
 def accounts_dashboard(request):
     # --- Filters ---
     selected_role = request.GET.get('role')
@@ -645,3 +655,22 @@ def accounts_dashboard(request):
     }
 
     return render(request, "dashboard/dashboard_accounts.html", context)
+
+@login_required
+def export_accounts_view(request):
+    """
+    Runs the export_accounts management command and returns the Excel file as download.
+    """
+    output_file = "school_accounts.xlsx"
+    
+    # Run the management command
+    call_command("export_accounts")
+    
+    # Serve the file as download
+    if os.path.exists(output_file):
+        with open(output_file, 'rb') as f:
+            response = HttpResponse(f.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            response['Content-Disposition'] = f'attachment; filename={output_file}'
+            return response
+    else:
+        return HttpResponse("Export failed, file not found.", status=404)

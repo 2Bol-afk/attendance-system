@@ -19,4 +19,5 @@ urlpatterns = [
     path('change-password/',views.change_password,name='change_password'),
     path('logout/', views.logout_view, name='logout'),
     path('accounts-dashboard/',views.accounts_dashboard, name='accounts_dashboard'),
+    path('export-accounts/', views.export_accounts_view, name='export_accounts_view'),
 ]
