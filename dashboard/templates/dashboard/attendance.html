@@ -153,7 +153,7 @@
       <option value="">--Select Subject--</option>
       {% for offering in offerings %}
         <option value="{{ offering.id }}" {% if selected_offering and offering.id == selected_offering.id %}selected{% endif %}>
-          {{ offering.subject.subject_code }} - {{ offering.year }} - {{ offering.school_year }}
+          {{ offering.subject.name }} - {{ offering.year }} - {{ offering.school_year }}
         </option>
       {% endfor %}
     </select>

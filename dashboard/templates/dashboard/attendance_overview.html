@@ -1,50 +1,55 @@
 {% extends 'base_parent.html' %}
-{% block title %}Attendance Overview{% endblock %}
+{% load static %}
+
+{% block title %}Child Attendance{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/report.css' %}">
+
 <div class="dashboard-container">
 
-  <!-- Dashboard Header -->
+  <!-- Header -->
   <div class="dashboard-header">
-    <h2>{{ student.full_name }} - Attendance Overview</h2>
+    <h2>Attendance for {{ student.full_name }}</h2>
   </div>
 
   <!-- Filters -->
-  <form method="GET" class="filter-form" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-    <div>
+  <form method="GET" class="filter-form">
+    <div class="form-group">
       <label for="subject">Subject:</label>
       <select name="subject" id="subject">
         <option value="">-- All Subjects --</option>
         {% for subject in subjects %}
-        <option value="{{ subject.id }}" {% if selected_subject and selected_subject.id == subject.id %}selected{% endif %}>
-          {{ subject.name }}
-        </option>
+          <option value="{{ subject.id }}" {% if selected_subject and selected_subject.id == subject.id %}selected{% endif %}>
+            {{ subject.name }}
+          </option>
         {% endfor %}
       </select>
     </div>
 
-    <div>
+    <div class="form-group">
       <label for="start_date">Start Date:</label>
       <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
     </div>
 
-    <div>
+    <div class="form-group">
       <label for="end_date">End Date:</label>
       <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
     </div>
 
-    <div style="align-self: flex-end;">
+    <div class="form-group filter-button">
       <button type="submit" class="add-student-btn">View</button>
     </div>
   </form>
 
   <!-- Attendance Table -->
   <div class="attendance-box">
+    <h3>Attendance Records</h3>
     <table class="recent-table">
       <thead>
         <tr>
           <th>Date</th>
-          <th>Time</th>
+          <th>Subject</th>
           <th>Status</th>
         </tr>
       </thead>
@@ -52,7 +57,7 @@
         {% for record in attendance_records %}
         <tr>
           <td>{{ record.date|date:"M d, Y" }}</td>
-          <td>{{ record.time|time:"H:i" }}</td>
+          <td>{{ record.subject_offering.subject.name }}</td>
           <td>
             <span class="status-label 
               {% if record.status == 'present' %}present
@@ -64,7 +69,7 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="3" class="empty-row">No attendance records found.</td>
+          <td colspan="3" class="empty-row">No attendance records found for the selected filters.</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -72,69 +77,5 @@
   </div>
 
 </div>
-<style>
-/* Container fix */
-.filter-form label {
-  font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 5px;
-  display: block;
-}
-
-/* Dropdown styling */
-.filter-form select,
-.filter-form input[type="date"] {
-  padding: 8px 12px;
-  width: 180px;
-  border: 1px solid #d1d5db;  /* light gray */
-  border-radius: 6px;
-  background-color: #fff;
-  font-size: 14px;
-  outline: none;
-  transition: all 0.2s ease;
-}
-
-/* Hover */
-.filter-form select:hover,
-.filter-form input[type="date"]:hover {
-  border-color: #9ca3af; /* darker gray */
-}
-
-/* Focus */
-.filter-form select:focus,
-.filter-form input[type="date"]:focus {
-  border-color: #2563eb; /* blue */
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-}
-
-/* Dropdown appearance */
-.filter-form select {
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg width='16' height='16' fill='gray' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6l4 4 4-4z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 14px;
-  padding-right: 32px; /* space for arrow */
-}
-</style>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-
-    const startDateField = document.getElementById("start_date");
-    const endDateField = document.getElementById("end_date");
-
-    // Format today's date for input[type="date"]
-    const today = new Date().toISOString().split("T")[0];
-
-    // Only auto-fill if they are empty (meaning: first load)
-    if (!startDateField.value) {
-        startDateField.value = today;
-    }
-    if (!endDateField.value) {
-        endDateField.value = today;
-    }
-});
-</script>
 
 {% endblock %}

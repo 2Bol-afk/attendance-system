@@ -112,38 +112,59 @@ def teacher_home(request):
 
 @login_required
 def student_dashboard(request):
-    subjects = request.user.studentprofile.subjects.all()
     student = request.user.studentprofile
+    subjects = student.subjects.all()
 
-    assigned_subjects = student.subjects.all()
-    total_subjects = assigned_subjects.count()
+    # Subject filter for chart, stats & recent attendance
+    subject_id = request.GET.get('subject')
 
-    attendance_qs = student.attendances.all()
+    # Base queryset: all attendance for this student (will be filtered below)
+    attendance_qs = student.attendances.all().select_related(
+        'subject_offering__subject'
+    )
 
+    # Optional filter by subject
+    selected_subject_id = None
+    if subject_id:
+        try:
+            selected_subject = subjects.get(id=subject_id)
+            selected_subject_id = selected_subject.id
+            offerings = SubjectOffering.objects.filter(subject=selected_subject)
+            attendance_qs = attendance_qs.filter(subject_offering__in=offerings)
+        except Subject.DoesNotExist:
+            selected_subject = None
+    else:
+        selected_subject = None
+
+    # Totals & stats use the (possibly filtered) attendance_qs so
+    # the chart and percentage reflect the current subject filter.
+    total_subjects = subjects.count()
     status_counts = attendance_qs.values('status').annotate(count=Count('id'))
 
-    attendance_data = {'present':0,'absent':0,'late':0}
-
+    attendance_data = {'present': 0, 'absent': 0, 'late': 0}
     for item in status_counts:
         attendance_data[item['status']] = item['count']
 
     total_records = attendance_qs.count()
-
     if total_records > 0:
         attendance_percentage = (attendance_data["present"] / total_records) * 100
     else:
         attendance_percentage = 0
 
+    # Recent attendance (respecting subject filter if any)
+    recent_attendance_list = attendance_qs.order_by('-date', '-time')[:10]
+
     context = {
-        'student':student,
-        'assigned_subject': assigned_subjects,
-        'total_subjects':total_subjects,
+        'student': student,
+        'total_subjects': total_subjects,
         "attendance_data": attendance_data,
         "attendance_percentage": round(attendance_percentage, 1),
         "total_records": total_records,
-        'subjects':subjects
+        'subjects': subjects,
+        'selected_subject_id': selected_subject_id,
+        'recent_attendance_list': recent_attendance_list,
     }
-    return render(request,'dashboard/student_dashboard.html',context)
+    return render(request, 'dashboard/student_dashboard.html', context)
 
 @login_required
 def student_subjects(request):
@@ -265,44 +286,6 @@ def children_list(request):
         'children': children
     }
     return render(request, 'dashboard/children_list.html', context)
-
-@login_required
-def student_attendance_overview(request, student_id):
-    student = get_object_or_404(StudentProfile, student_ID=student_id)
-
-    # Subjects dropdown
-    subjects = student.subjects.all()
-    selected_subject_id = request.GET.get('subject')
-
-    # Always default BOTH to today's date
-    today = timezone.now().date()
-
-    start_date = request.GET.get('start_date') or today
-    end_date = request.GET.get('end_date') or today
-
-    # Filter logic
-    if selected_subject_id:
-        selected_subject = subjects.get(id=selected_subject_id)
-        offerings = SubjectOffering.objects.filter(subject=selected_subject)
-        attendance_records = student.attendances.filter(
-            subject_offering__in=offerings,
-            date__range=[start_date, end_date]
-        )
-    else:
-        selected_subject = None
-        attendance_records = student.attendances.filter(
-            date__range=[start_date, end_date]
-        )
-
-    context = {
-        'student': student,
-        'subjects': subjects,
-        'selected_subject': selected_subject,
-        'start_date': start_date,
-        'end_date': end_date,
-        'attendance_records': attendance_records.order_by('date', 'time'),
-    }
-    return render(request, 'dashboard/attendance_overview.html', context)
 
 @login_required
 def parent_dashboard(request):

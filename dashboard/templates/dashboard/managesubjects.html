@@ -41,6 +41,10 @@
           <label for="{{ add_form.semester_number.id_for_label }}">Semester</label>
           {{ add_form.semester_number }}
         </div>
+        <div class="form-group">
+          <label for="{{ add_form.year_level.id_for_label }}">Year Level</label>
+          {{ add_form.year_level }}
+        </div>
         <button type="submit" class="btn">Save</button>
       </form>
     </div>
@@ -49,6 +53,11 @@
   <!-- Subjects Table -->
   <div class="bottom-section">
     <div class="attendance-box">
+      <div class="search-container">
+    <input type="text"
+           class="search-input universal-search"
+           placeholder="Search anything (name, course, section, subject...)">
+  </div>
       <h3>Subject List</h3>
       <table class="recent-table">
         <thead>
@@ -57,6 +66,7 @@
             <th>Subject Code</th>
             <th>Subject Name</th>
             <th>Semester</th>
+            <th>Year Level</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -67,6 +77,7 @@
             <td>{{ subject.subject_code }}</td>
             <td>{{ subject.name }}</td>
             <td>{{ subject.semester_number }}</td>
+            <td>{{ subject.year_level }}</td>
             <td>
               <a href="#" class="edit-btn" data-target="#editModal{{ subject.id }}">Edit</a>
               <a href="#" class="delete-btn" data-target="#deleteModal{{ subject.id }}">Delete</a>
@@ -116,6 +127,15 @@
         <select name="semester_number" class="form-control">
           <option value="1st" {% if subject.semester_number == '1st' %}selected{% endif %}>1st Semester</option>
           <option value="2nd" {% if subject.semester_number == '2nd' %}selected{% endif %}>2nd Semester</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="year_level">Year Level</label>
+        <select name="year_level" class="form-control">
+          <option value="1st" {% if subject.year_level == '1st' %}selected{% endif %}>1st Year</option>
+          <option value="2nd" {% if subject.year_level == '2nd' %}selected{% endif %}>2nd Year</option>
+          <option value="3rd" {% if subject.year_level == '3rd' %}selected{% endif %}>3rd Year</option>
+          <option value="4th" {% if subject.year_level == '4th' %}selected{% endif %}>4th Year</option>
         </select>
       </div>
       <button type="submit" class="btn">Update Subject</button>

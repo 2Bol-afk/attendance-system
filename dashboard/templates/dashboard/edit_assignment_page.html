@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Assignment{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <div class="dashboard-header">
+    <h2>Edit Assignment</h2>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="info-note">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="attendance-box">
+    <!-- Year filter similar to Add page -->
+    <form method="get" class="styled-filter" style="margin-bottom: 15px;">
+      <div class="form-field">
+        <label for="year_filter">Year Level</label>
+        <select id="year_filter" name="year" class="form-control" onchange="this.form.submit()">
+          {% for value,label in year_levels %}
+            <option value="{{ value }}" {% if value == selected_year %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+
+    <form method="post" action="{% url 'academics:edit_assignment_page' assignment.id %}">
+      {% csrf_token %}
+      <input type="hidden" name="year" value="{{ selected_year }}">
+
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="teacherInput">Teacher</label>
+          <input id="teacherInput" list="teacherList" class="form-control"
+                 value="{{ assignment.teacher.first_name }} {{ assignment.teacher.last_name }}"
+                 required>
+          <input type="hidden" name="teacher_id" id="teacherId" value="{{ assignment.teacher.id }}">
+          <datalist id="teacherList">
+            {% for t in teacher_list %}
+              <option data-id="{{ t.id }}" value="{{ t.first_name }} {{ t.last_name }}"></option>
+            {% endfor %}
+          </datalist>
+        </div>
+
+        <div class="form-field">
+          <label for="schoolYearInput">School Year</label>
+          <input id="schoolYearInput" type="text" name="school_year" value="{{ assignment.school_year }}" class="form-control" required>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:20px;">
+        <label>Select Subject &amp; Section</label>
+        <p class="info-note" style="margin-top:8px;">
+          Select the subject and section for this assignment. Combinations already taken are disabled.
+        </p>
+        <table class="subject-table recent-table">
+          <thead>
+            <tr>
+              <th>Subject Code</th>
+              <th>Subject Name</th>
+              <th>Semester</th>
+              <th>Course</th>
+              {% for value,label in sections %}
+                <th>Section {{ label }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% if subject_rows %}
+              {% for row in subject_rows %}
+                {% with sub=row.subject %}
+                <tr>
+                  <td>{{ sub.subject_code }}</td>
+                  <td>{{ sub.name }}</td>
+                  <td>{{ sub.semester_number }}</td>
+                  <td>{{ sub.course.name }}</td>
+                  {% for sec in row.sections %}
+                    <td class="{% if sec.is_taken %}taken-cell{% endif %}">
+                      <label class="section-checkbox">
+                        <input type="checkbox"
+                               name="assign_{{ sub.id }}_{{ sec.value }}"
+                               {% if sec.is_selected %}checked{% endif %}
+                               {% if sec.is_taken %}disabled{% endif %}>
+                        {% if sec.is_taken %}
+                          <span class="taken-pill">Taken</span>
+                        {% endif %}
+                      </label>
+                      {% if sec.is_taken and sec.assigned_teacher %}
+                        <div class="taken-meta">
+                          {{ sec.assigned_teacher.first_name }} {{ sec.assigned_teacher.last_name }}
+                          ({{ sec.school_year }})
+                        </div>
+                      {% endif %}
+                    </td>
+                  {% endfor %}
+                </tr>
+                {% endwith %}
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="{{ 4|add:sections|length }}" class="empty-row">No subjects found for this year level.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button type="submit" class="btn add-subject-btn">Update Assignment</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+<style>
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+.form-field label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 6px;
+  color: #1f2937;
+}
+.form-field .form-control,
+.form-field input,
+.form-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.subject-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+.subject-table th, .subject-table td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+.taken-cell { background-color: #fee2e2; }
+.taken-cell input[type="checkbox"] { cursor: not-allowed; }
+.section-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+}
+.taken-pill {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background-color: #dc2626;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+}
+.taken-meta {
+  font-size: 11px;
+  color: #991b1b;
+  margin-top: 2px;
+}
+</style>
+
+<script>
+document.addEventListener('input', function(e) {
+  if (e.target.id === 'teacherInput') {
+    const input = e.target;
+    const list = document.getElementById('teacherList');
+    const hidden = document.getElementById('teacherId');
+    if (list && hidden) {
+      const options = list.options;
+      let foundId = '';
+      for (let i = 0; i < options.length; i++) {
+        if (options[i].value === input.value) {
+          foundId = options[i].dataset.id || '';
+          break;
+        }
+      }
+      hidden.value = foundId;
+    }
+  }
+});
+</script>
+
+{% endblock %}

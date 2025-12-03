@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assign Teacher{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <div class="dashboard-header">
+    <h2>Assign Teacher to Subjects</h2>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="info-note">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Filter bar for year & section -->
+  <form method="get" class="filter-container styled-filter">
+    <div class="form-field">
+      <label for="year_filter">Year Level</label>
+      <select id="year_filter" name="year" class="form-control" onchange="this.form.submit()">
+        {% for value,label in year_levels %}
+          <option value="{{ value }}" {% if value == selected_year %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+
+  <form method="post" action="{% url 'academics:add_assignment_page' %}" id="assignForm">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="teacherInput">Teacher</label>
+        <input id="teacherInput" list="teacherList" class="form-control" placeholder="Type to search teacher..." required>
+        <input type="hidden" name="teacher_id" id="teacherId">
+        <datalist id="teacherList">
+          {% for t in teacher_list %}
+            <option data-id="{{ t.id }}" value="{{ t.first_name }} {{ t.last_name }}"></option>
+          {% endfor %}
+        </datalist>
+      </div>
+      <div class="form-field">
+        <label for="schoolYearInput">School Year</label>
+        {{ assign_subject_form.school_year }}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Select Subjects for Year {{ selected_year }} and Sections</label>
+      <p class="info-note" style="margin-top:8px;">
+        Subjects already assigned to this year &amp; section are highlighted and cannot be selected again.
+      </p>
+      <table class="subject-table recent-table">
+        <thead>
+          <tr>
+            <th>Subject Code</th>
+            <th>Subject Name</th>
+            <th>Semester</th>
+            <th>Course</th>
+            {% for value,label in sections %}
+              <th>Section {{ label }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% if subject_rows %}
+            {% for row in subject_rows %}
+              {% with sub=row.subject %}
+              <tr>
+                <td>{{ sub.subject_code }}</td>
+                <td>{{ sub.name }}</td>
+                <td>{{ sub.semester_number }}</td>
+                <td>{{ sub.course.name }}</td>
+                {% for sec in row.sections %}
+                  <td class="{% if sec.is_taken %}taken-cell{% endif %}">
+                    <label class="section-checkbox">
+                      <input type="checkbox"
+                             name="assign_{{ sub.id }}_{{ sec.value }}"
+                             data-subject="{{ sub.id }}"
+                             data-section="{{ sec.value }}"
+                             data-year="{{ selected_year }}"
+                             {% if sec.is_taken %}disabled{% endif %}>
+                      {% if sec.is_taken %}
+                        <span class="taken-pill">
+                          Taken
+                        </span>
+                      {% endif %}
+                    </label>
+                    {% if sec.is_taken and sec.assigned_teacher %}
+                      <div class="taken-meta">
+                        {{ sec.assigned_teacher.first_name }} {{ sec.assigned_teacher.last_name }} ({{ sec.school_year }})
+                      </div>
+                    {% endif %}
+                  </td>
+                {% endfor %}
+              </tr>
+              {% endwith %}
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="{{ 4|add:sections|length }}" class="empty-row">No subjects found for the selected year level.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <button type="submit" class="btn add-subject-btn">Assign Selected Subjects</button>
+  </form>
+
+</div>
+
+<style>
+.subject-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+.subject-table th, .subject-table td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+.form-group { margin-bottom: 15px; }
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+.form-field label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 6px;
+  color: #1f2937;
+}
+.form-field .form-control,
+.form-field input,
+.form-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.styled-filter {
+  background: #fff;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+}
+.taken-cell { background-color: #fee2e2; }
+.taken-cell input[type="checkbox"] { cursor: not-allowed; }
+.taken-pill {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background-color: #dc2626;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.taken-meta {
+  font-size: 11px;
+  color: #991b1b;
+  margin-top: 2px;
+}
+.section-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+}
+</style>
+
+<script>
+(function() {
+  const STORAGE_KEY = 'assignSelections';
+  const META_KEY = 'assignMeta';
+  const currentYear = "{{ selected_year }}";
+
+  function loadSelections() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveSelections(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function loadMeta() {
+    try {
+      return JSON.parse(localStorage.getItem(META_KEY)) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveMeta(data) {
+    localStorage.setItem(META_KEY, JSON.stringify(data));
+  }
+
+  function syncFromStorage() {
+    const data = loadSelections();
+    const yearSelections = data[currentYear] || {};
+    document.querySelectorAll('input[type="checkbox"][data-year]').forEach(cb => {
+      const subject = cb.dataset.subject;
+      const section = cb.dataset.section;
+      if (yearSelections[subject] && yearSelections[subject].includes(section)) {
+        cb.checked = true;
+      }
+    });
+
+    const meta = loadMeta();
+    if (meta.teacher && meta.teacher_name) {
+      const teacherInput = document.getElementById('teacherInput');
+      const teacherIdInput = document.getElementById('teacherId');
+      if (teacherInput) teacherInput.value = meta.teacher_name;
+      if (teacherIdInput) teacherIdInput.value = meta.teacher;
+    }
+    if (meta.school_year) {
+      const syInput = document.querySelector('[name="school_year"]');
+      if (syInput) syInput.value = meta.school_year;
+    }
+  }
+
+  function handleCheckboxChange(event) {
+    const cb = event.target;
+    if (!cb.dataset.subject) return;
+    const data = loadSelections();
+    if (!data[currentYear]) data[currentYear] = {};
+    const subject = cb.dataset.subject;
+    const section = cb.dataset.section;
+    if (!data[currentYear][subject]) data[currentYear][subject] = [];
+
+    if (cb.checked) {
+      if (!data[currentYear][subject].includes(section)) {
+        data[currentYear][subject].push(section);
+      }
+    } else {
+      data[currentYear][subject] = data[currentYear][subject].filter(sec => sec !== section);
+      if (data[currentYear][subject].length === 0) {
+        delete data[currentYear][subject];
+      }
+    }
+
+    saveSelections(data);
+  }
+
+  function handleMetaChange() {
+    const teacherInput = document.getElementById('teacherInput');
+    const syInput = document.querySelector('[name="school_year"]');
+    const meta = loadMeta();
+    const teacherIdInput = document.getElementById('teacherId');
+    meta.teacher = teacherIdInput ? teacherIdInput.value : '';
+    meta.teacher_name = teacherInput ? teacherInput.value : '';
+    meta.school_year = syInput ? syInput.value : '';
+    saveMeta(meta);
+  }
+
+  document.addEventListener('change', function(e) {
+    if (e.target.matches('input[type="checkbox"][data-year]')) {
+      handleCheckboxChange(e);
+    }
+    if (e.target.id === 'teacherInput' || e.target.name === 'school_year') {
+      handleMetaChange();
+    }
+  });
+
+  document.addEventListener('input', function(e) {
+    if (e.target.id === 'teacherInput' || e.target.name === 'school_year') {
+      handleMetaChange();
+    }
+    if (e.target.id === 'teacherInput') {
+      const input = e.target;
+      const list = document.getElementById('teacherList');
+      const hidden = document.getElementById('teacherId');
+      if (list && hidden) {
+        const options = list.options;
+        let foundId = '';
+        for (let i = 0; i < options.length; i++) {
+          if (options[i].value === input.value) {
+            foundId = options[i].dataset.id || '';
+            break;
+          }
+        }
+        hidden.value = foundId;
+        handleMetaChange();
+      }
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    syncFromStorage();
+  });
+})();
+</script>
+{% endblock %}
