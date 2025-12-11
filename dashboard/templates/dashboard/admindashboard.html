@@ -60,22 +60,18 @@
   <div class="quick-actions">
     <h3>Quick Actions</h3>
     <div class="actions-row">
-      <div class="action-card">
+      <a href="{% url 'accounts:add_student' %}" class="action-card">
         <img src="{% static 'images/addstudent.png' %}" alt="Add Student Icon">
         <p>Add Student</p>
-      </div>
-      <div class="action-card">
+      </a>
+      <a href="{%  url 'accounts:manage_teacher' %}" class="action-card">
         <img src="{% static 'images/addteacher.png' %}" alt="Add Teacher icon">
         <p>Add Teacher</p>
-      </div>
-      <div class="action-card">
-        <img src="{% static 'images/markattendance.jpg' %}" alt="Mark Attendance icon">
-        <p>Mark Attendance</p>
-      </div>
-      <div class="action-card">
+      </a>
+      <a href="{% url 'reports:attendance_report' %}" class="action-card">
         <img src="https://www.seekpng.com/png/detail/938-9383200_png-file-svg-view-report-icon-png.png" alt="View Reports icon">
         <p>View Reports</p>
-      </div>
+      </a>
     </div>
   </div>
 

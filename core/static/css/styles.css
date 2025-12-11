@@ -230,6 +230,9 @@ body {
   text-align: center;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
+  display: block;
+  text-decoration: none;
+  color: inherit;
 }
 
 .action-card:hover {

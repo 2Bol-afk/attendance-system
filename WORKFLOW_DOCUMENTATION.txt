@@ -1,0 +1,823 @@
+================================================================================
+                    STUDENT ATTENDANCE SYSTEM
+                        WORKFLOW DOCUMENTATION
+================================================================================
+
+Version: 1.0
+Date: November 2025
+System: Django-based Attendance Management System
+
+================================================================================
+                            TABLE OF CONTENTS
+================================================================================
+
+1. SYSTEM OVERVIEW
+2. ADMIN WORKFLOW
+3. TEACHER WORKFLOW
+4. STUDENT WORKFLOW
+5. PARENT WORKFLOW
+6. ATTENDANCE RECORDING WORKFLOW
+7. DASHBOARD WORKFLOWS
+8. REPORTS WORKFLOW
+9. ACCOUNT MANAGEMENT WORKFLOW
+10. SUBJECT & ASSIGNMENT WORKFLOW
+
+================================================================================
+                          1. SYSTEM OVERVIEW
+================================================================================
+
+The Student Attendance System is a web-based application built with Django that
+manages student attendance across multiple courses, subjects, and sections.
+
+KEY COMPONENTS:
+├── User Management (Admin, Teacher, Student, Parent)
+├── Academic Management (Courses, Subjects, Assignments)
+├── Attendance Tracking (Present, Absent, Late)
+├── Dashboard Views (Role-specific)
+└── Reporting System (Multiple report types)
+
+USER ROLES:
+├── Admin: Full system access and management
+├── Teacher: Mark attendance, view student lists
+├── Student: View personal attendance records
+└── Parent: View children's attendance reports
+
+================================================================================
+                          2. ADMIN WORKFLOW
+================================================================================
+
+2.1 ADMIN LOGIN WORKFLOW
+─────────────────────────
+Step 1: Navigate to login page (/)
+Step 2: Enter credentials (username/email + password)
+Step 3: System authenticates user
+Step 4: Check if first_login = True
+    ├── YES → Redirect to change password page
+    └── NO → Proceed to admin dashboard
+Step 5: Redirect to /dashboard/admin/
+
+2.2 ADMIN DASHBOARD WORKFLOW
+─────────────────────────────
+Step 1: View dashboard statistics
+    ├── Total Students count
+    ├── Total Teachers count
+    ├── Total Parents count
+    └── Total Subjects count
+Step 2: View Quick Actions
+    ├── Add Student (→ /accounts/students/add/)
+    ├── Add Teacher (→ /accounts/teachers/add/)
+    └── View Reports (→ /reports/admin)
+Step 3: View Attendance Overview
+    ├── Select Year Level (1st, 2nd, 3rd, 4th)
+    ├── Select Subject
+    └── View Pie Chart (Present/Absent/Late distribution)
+Step 4: View Recent Attendance Table
+    ├── Student Name
+    ├── Subject
+    ├── Status (Present/Absent/Late)
+    └── Date
+
+2.3 ADMIN - MANAGE TEACHERS WORKFLOW
+─────────────────────────────────────
+Step 1: Navigate to /accounts/teachers/
+Step 2: View list of all teachers
+Step 3: Add New Teacher
+    ├── Click "Add Teacher" button
+    ├── Fill form:
+    │   ├── Email (auto-generated: firstname.lastname@teacher.isufst.com)
+    │   ├── First Name
+    │   ├── Middle Name (optional)
+    │   └── Last Name
+    ├── System generates:
+    │   ├── Unique username
+    │   ├── Random password (8 characters)
+    │   └── Sets first_login = True
+    └── Save → Teacher created
+Step 4: Edit Teacher
+    ├── Click "Edit" on teacher row
+    ├── Modify teacher details
+    └── Save changes
+Step 5: Delete Teacher
+    ├── Click "Delete" on teacher row
+    ├── Confirm deletion
+    └── Teacher removed from system
+
+2.4 ADMIN - MANAGE STUDENTS WORKFLOW
+─────────────────────────────────────
+Step 1: Navigate to /accounts/student/
+Step 2: View list of all students
+Step 3: Add New Student
+    ├── Click "Add Student" button
+    ├── Fill Student User Form:
+    │   └── Email (auto-generated: firstname.lastname@CSS.com)
+    ├── Fill Student Profile Form:
+    │   ├── Student ID (unique, primary key)
+    │   ├── First Name
+    │   ├── Middle Name (optional)
+    │   ├── Last Name
+    │   ├── Course (select from dropdown)
+    │   ├── Year Level (1st, 2nd, 3rd, 4th)
+    │   ├── Section (A, B, C, D)
+    │   ├── Status (Regular/Irregular)
+    │   ├── Semester (1st/2nd)
+    │   └── Subjects (checkboxes - filtered by course/year/semester)
+    ├── System generates:
+    │   ├── Unique username
+    │   ├── Random password
+    │   └── Sets first_login = True
+    └── Save → Student created and enrolled in selected subjects
+Step 4: Edit Student
+    ├── Click "Edit" on student row
+    ├── Modify student details
+    ├── Update subject enrollment
+    └── Save changes
+Step 5: Delete Student
+    ├── Click "Delete" on student row
+    ├── Confirm deletion
+    └── Student removed from system
+
+2.5 ADMIN - MANAGE PARENTS WORKFLOW
+────────────────────────────────────
+Step 1: Navigate to /accounts/parent/
+Step 2: View list of all parents
+Step 3: Add New Parent
+    ├── Click "Add Parent" button
+    ├── Fill Parent User Form:
+    │   └── Email (auto-generated)
+    ├── Fill Parent Profile Form:
+    │   ├── First Name
+    │   ├── Middle Name (optional)
+    │   ├── Last Name
+    │   ├── Contact Number
+    │   └── Children (select students - ManyToMany)
+    ├── System generates:
+    │   ├── Unique username
+    │   ├── Random password
+    │   └── Sets first_login = True
+    └── Save → Parent created and linked to children
+Step 4: Edit Parent
+    ├── Click "Edit" on parent row
+    ├── Modify parent details
+    ├── Update children associations
+    └── Save changes
+Step 5: Delete Parent
+    ├── Click "Delete" on parent row
+    ├── Confirm deletion
+    └── Parent removed from system
+
+2.6 ADMIN - MANAGE SUBJECTS WORKFLOW
+─────────────────────────────────────
+Step 1: Navigate to /academic/subjects/
+Step 2: View list of all subjects
+Step 3: Add New Subject
+    ├── Click "Add Subject" button
+    ├── Fill Subject Form:
+    │   ├── Course (select from dropdown)
+    │   ├── Subject Code (e.g., IT1101)
+    │   ├── Subject Name (e.g., Introduction to Computing)
+    │   ├── Semester Number (1st/2nd)
+    │   └── Year Level (1st, 2nd, 3rd, 4th)
+    └── Save → Subject created
+Step 4: Edit Subject
+    ├── Click "Edit" on subject row
+    ├── Modify subject details
+    └── Save changes
+Step 5: Delete Subject
+    ├── Click "Delete" on subject row
+    ├── Confirm deletion
+    └── Subject removed from system
+
+2.7 ADMIN - ASSIGN TEACHERS TO SUBJECTS WORKFLOW
+─────────────────────────────────────────────────
+Step 1: Navigate to /academic/assignments/
+Step 2: View all existing assignments
+Step 3: Add New Assignment
+    ├── Navigate to /academic/assignments/add-page/
+    ├── Select Teacher (from datalist)
+    ├── Select Year Level (filters subjects)
+    ├── Select School Year (e.g., 2024-2025)
+    ├── For each subject:
+    │   ├── Check sections to assign (A, B, C, D)
+    │   └── System checks if offering already exists
+    ├── System creates SubjectOffering records:
+    │   ├── Links teacher to subject
+    │   ├── Sets year level and section
+    │   └── Sets school year
+    ├── System automatically enrolls students:
+    │   └── Students matching (course + year + section) → enrolled in subject
+    └── Save → Assignment created
+Step 4: Edit Assignment
+    ├── Navigate to /academic/assignments/edit-page/<offering_id>/
+    ├── Modify teacher, year, section, or school year
+    ├── Update subject selections
+    └── Save changes
+Step 5: Delete Assignment
+    ├── Click "Delete" on assignment row
+    ├── Confirm deletion
+    └── Assignment removed (students remain enrolled in subject)
+
+2.8 ADMIN - EXPORT ACCOUNTS WORKFLOW
+─────────────────────────────────────
+Step 1: Navigate to /accounts/accounts-dashboard/
+Step 2: Click "Export Accounts" button
+Step 3: System generates Excel file:
+    ├── Students grouped by Year/Section (separate sheets)
+    ├── Parents grouped by children's sections
+    └── Teachers with assigned subjects
+Step 4: Download school_accounts.xlsx file
+
+================================================================================
+                          3. TEACHER WORKFLOW
+================================================================================
+
+3.1 TEACHER LOGIN WORKFLOW
+───────────────────────────
+Step 1: Navigate to login page (/)
+Step 2: Enter credentials (username/email + password)
+Step 3: System authenticates user
+Step 4: Check if first_login = True
+    ├── YES → Redirect to change password page
+    └── NO → Proceed to teacher dashboard
+Step 5: Redirect to /dashboard/teacher/
+
+3.2 TEACHER DASHBOARD WORKFLOW
+───────────────────────────────
+Step 1: View dashboard statistics
+    ├── Total Students (enrolled in teacher's subjects)
+    ├── Total Subjects (assigned to teacher)
+    └── Today's Attendance (records marked today)
+Step 2: View Attendance Overview
+    ├── Select Subject (from teacher's assigned subjects)
+    └── View Pie Chart (Present/Absent/Late distribution)
+Step 3: View Recent Attendance
+    ├── Last 5 attendance records
+    ├── Student Name
+    ├── Subject
+    ├── Status
+    └── Date & Time
+
+3.3 TEACHER - MARK ATTENDANCE WORKFLOW
+───────────────────────────────────────
+Step 1: Navigate to /academic/mark-attendance/
+Step 2: Select Subject Offering (from dropdown)
+    └── System filters to only teacher's assigned offerings
+Step 3: System auto-fills:
+    ├── Year Level (from offering)
+    ├── Section (from offering)
+    ├── Date (default: today)
+    └── Time (default: current time)
+Step 4: View Student List
+    └── Students filtered by: course + year + section
+Step 5: Check Existing Attendance (if date selected)
+    └── System pre-selects status for students with existing records
+Step 6: Mark Attendance for Each Student
+    ├── Select status for each student:
+    │   ├── Present
+    │   ├── Absent
+    │   └── Late
+    └── System saves:
+        ├── Student ID
+        ├── Subject Offering
+        ├── Date
+        ├── Time
+        └── Status
+Step 7: Click "Save Attendance"
+Step 8: System processes:
+    ├── Creates new attendance records
+    ├── Updates existing records (if date already has attendance)
+    └── Shows success message
+Step 9: Redirect to same page with filters preserved
+
+3.4 TEACHER - VIEW STUDENT LIST WORKFLOW
+───────────────────────────────────────
+Step 1: Navigate to /academic/student-list
+Step 2: Filter Options:
+    ├── Select Subject Offering (optional)
+    ├── Select Year Level (optional)
+    ├── Select Section (optional)
+    └── Select Status: Regular/Irregular (optional)
+Step 3: View Filtered Students
+    ├── Student ID
+    ├── Name
+    ├── Course
+    ├── Year & Section
+    └── Status
+Step 4: System shows only students enrolled in teacher's subjects
+
+3.5 TEACHER - VIEW SUBJECT ASSIGNMENTS WORKFLOW
+────────────────────────────────────────────────
+Step 1: Navigate to /academic/subject-assign/
+Step 2: View all assigned subjects
+    ├── Subject Code & Name
+    ├── Year Level
+    ├── Section
+    └── School Year
+Step 3: View details for each assignment
+
+================================================================================
+                          4. STUDENT WORKFLOW
+================================================================================
+
+4.1 STUDENT LOGIN WORKFLOW
+──────────────────────────
+Step 1: Navigate to login page (/)
+Step 2: Enter credentials (username/email + password)
+Step 3: System authenticates user
+Step 4: Check if first_login = True
+    ├── YES → Redirect to change password page
+    └── NO → Proceed to student dashboard
+Step 5: Redirect to /dashboard/student/
+
+4.2 STUDENT DASHBOARD WORKFLOW
+───────────────────────────────
+Step 1: View dashboard statistics
+    ├── Total Subjects (enrolled)
+    ├── Attendance Percentage (Present / Total)
+    └── Status Breakdown (Present/Absent/Late counts)
+Step 2: View Attendance Chart
+    ├── Select Subject (optional filter)
+    └── View Pie Chart (Present/Absent/Late)
+Step 3: View Recent Attendance
+    ├── Last 10 attendance records
+    ├── Subject
+    ├── Status
+    ├── Date & Time
+    └── Filtered by selected subject (if filter applied)
+
+4.3 STUDENT - VIEW SUBJECTS WORKFLOW
+─────────────────────────────────────
+Step 1: Navigate to /dashboard/student-subjects/
+Step 2: View enrolled subjects list
+    ├── Subject Code
+    ├── Subject Name
+    ├── Course
+    ├── Year Level
+    └── Section
+Step 3: View subject details
+
+4.4 STUDENT - VIEW ATTENDANCE OVERVIEW WORKFLOW
+────────────────────────────────────────────────
+Step 1: Navigate to /dashboard/subject-attendance/
+Step 2: View attendance by subject
+    ├── Select Subject (from enrolled subjects)
+    ├── View attendance statistics:
+    │   ├── Total Records
+    │   ├── Present Count
+    │   ├── Absent Count
+    │   └── Late Count
+    └── View attendance percentage
+Step 3: View detailed attendance list
+    ├── Date
+    ├── Status
+    ├── Time
+    └── Subject
+
+================================================================================
+                          5. PARENT WORKFLOW
+================================================================================
+
+5.1 PARENT LOGIN WORKFLOW
+─────────────────────────
+Step 1: Navigate to login page (/)
+Step 2: Enter credentials (username/email + password)
+Step 3: System authenticates user
+Step 4: Check if first_login = True
+    ├── YES → Redirect to change password page
+    └── NO → Proceed to parent dashboard
+Step 5: Redirect to /dashboard/parent-dashboard
+
+5.2 PARENT DASHBOARD WORKFLOW
+──────────────────────────────
+Step 1: Check if parent has multiple children
+    ├── YES → Show children list
+    └── NO → Show single child dashboard
+Step 2: View Children List (if multiple)
+    ├── Child Name
+    ├── Student ID
+    ├── Course
+    └── Year & Section
+Step 3: Select Child to view attendance
+
+5.3 PARENT - VIEW CHILD ATTENDANCE OVERVIEW WORKFLOW
+─────────────────────────────────────────────────────
+Step 1: Navigate to /dashboard/child/<student_id>/attendance/
+Step 2: View child's attendance summary
+    ├── Total Attendance Records
+    ├── Present Count
+    ├── Absent Count
+    ├── Late Count
+    └── Attendance Percentage
+Step 3: View attendance by subject
+    ├── Subject Name
+    ├── Total Records per Subject
+    └── Status Breakdown per Subject
+Step 4: View recent attendance
+    ├── Date
+    ├── Subject
+    ├── Status
+    └── Time
+
+5.4 PARENT - VIEW ATTENDANCE DETAIL PER SUBJECT WORKFLOW
+────────────────────────────────────────────────────────
+Step 1: Navigate to /dashboard/child/<student_id>/attendance/<subject_id>/
+Step 2: View detailed attendance for specific subject
+    ├── Subject Information
+    ├── Attendance Statistics:
+    │   ├── Total Classes
+    │   ├── Present
+    │   ├── Absent
+    │   └── Late
+    └── Attendance Percentage
+Step 3: View attendance timeline
+    ├── Date
+    ├── Status
+    ├── Time
+    └── Chronological order
+
+================================================================================
+                   6. ATTENDANCE RECORDING WORKFLOW
+================================================================================
+
+6.1 ATTENDANCE RECORDING PROCESS
+──────────────────────────────────
+Step 1: Teacher logs into system
+Step 2: Navigate to Mark Attendance page
+Step 3: Select Subject Offering
+    └── System validates: teacher must be assigned to offering
+Step 4: System loads students
+    └── Filter: course + year + section matching offering
+Step 5: Select Date & Time
+    ├── Date: Default = today (can change)
+    └── Time: Default = current time (can change)
+Step 6: System checks for existing records
+    ├── If records exist for date → Pre-fill status
+    └── If no records → Show empty form
+Step 7: Teacher marks attendance
+    ├── For each student:
+    │   ├── Select status: Present / Absent / Late
+    │   └── System validates selection
+    └── Can mark all students or subset
+Step 8: Teacher clicks "Save Attendance"
+Step 9: System processes attendance
+    ├── For each marked student:
+    │   ├── Check if record exists (student + offering + date)
+    │   ├── If exists → Update record
+    │   └── If not exists → Create new record
+    └── Save: student, subject_offering, date, time, status
+Step 10: System validates unique constraint
+    └── Prevents duplicate: (student, subject_offering, date)
+Step 11: Show success message
+Step 12: Redirect to same page with filters preserved
+
+6.2 ATTENDANCE DATA STRUCTURE
+──────────────────────────────
+Each Attendance Record Contains:
+├── Student (ForeignKey to StudentProfile)
+├── Subject Offering (ForeignKey to SubjectOffering)
+├── Date (DateField)
+├── Time (TimeField)
+└── Status (CharField: 'present', 'absent', 'late')
+
+Unique Constraint:
+└── (student, subject_offering, date) - One record per student per subject per day
+
+6.3 ATTENDANCE VALIDATION RULES
+────────────────────────────────
+Rule 1: Teacher can only mark attendance for assigned subjects
+Rule 2: Only students enrolled in the subject offering can have attendance
+Rule 3: One attendance record per student per subject per day
+Rule 4: Date cannot be in the future (system validation)
+Rule 5: Status must be one of: Present, Absent, Late
+
+================================================================================
+                       7. DASHBOARD WORKFLOWS
+================================================================================
+
+7.1 ADMIN DASHBOARD WORKFLOW
+─────────────────────────────
+Location: /dashboard/admin/
+Access: Admin only
+
+Components:
+├── Header: "Welcome back, Admin!"
+├── Statistics Cards (4):
+│   ├── Total Students (with link to manage)
+│   ├── Total Teachers (with link to manage)
+│   ├── Total Parents (with link to manage)
+│   └── Total Subjects (with link to manage)
+├── Quick Actions (3):
+│   ├── Add Student (link)
+│   ├── Add Teacher (link)
+│   └── View Reports (link)
+├── Attendance Overview:
+│   ├── Year Level Filter
+│   ├── Subject Filter
+│   └── Pie Chart (Present/Absent/Late)
+└── Recent Attendance Table:
+    ├── Student Name
+    ├── Subject
+    ├── Status
+    └── Date
+
+7.2 TEACHER DASHBOARD WORKFLOW
+──────────────────────────────
+Location: /dashboard/teacher/
+Access: Teacher only
+
+Components:
+├── Header: "Welcome, [Teacher Name]!"
+├── Statistics Cards (3):
+│   ├── Total Students (in teacher's subjects)
+│   ├── Total Subjects (assigned to teacher)
+│   └── Today's Attendance (records marked today)
+├── Attendance Overview:
+│   ├── Subject Filter (teacher's subjects only)
+│   └── Pie Chart (Present/Absent/Late)
+└── Recent Attendance Table:
+    ├── Student Name
+    ├── Subject
+    ├── Status
+    └── Date & Time
+
+7.3 STUDENT DASHBOARD WORKFLOW
+──────────────────────────────
+Location: /dashboard/student/
+Access: Student only
+
+Components:
+├── Header: "Welcome, [Student Name]!"
+├── Statistics Cards (3):
+│   ├── Total Subjects (enrolled)
+│   ├── Attendance Percentage
+│   └── Status Breakdown (Present/Absent/Late counts)
+├── Attendance Chart:
+│   ├── Subject Filter (optional)
+│   └── Pie Chart (Present/Absent/Late)
+└── Recent Attendance List:
+    ├── Subject
+    ├── Status
+    ├── Date & Time
+    └── Last 10 records
+
+7.4 PARENT DASHBOARD WORKFLOW
+─────────────────────────────
+Location: /dashboard/parent-dashboard
+Access: Parent only
+
+Components:
+├── Header: "Welcome, [Parent Name]!"
+├── Children List (if multiple children):
+│   ├── Child Name
+│   ├── Student ID
+│   ├── Course
+│   └── Year & Section
+│   └── Link to child's attendance
+└── Single Child View (if one child):
+    ├── Attendance Summary
+    ├── Attendance by Subject
+    └── Recent Attendance
+
+================================================================================
+                        8. REPORTS WORKFLOW
+================================================================================
+
+8.1 ADMIN ATTENDANCE REPORT WORKFLOW
+─────────────────────────────────────
+Location: /reports/admin
+Access: Admin only
+
+Step 1: Navigate to Reports page
+Step 2: Apply Filters:
+    ├── Course (dropdown)
+    ├── Year Level (dropdown)
+    ├── Semester (dropdown)
+    ├── Subject (dropdown - filtered by course)
+    └── Section (dropdown)
+Step 3: Click "Generate Report"
+Step 4: View Report Data:
+    ├── Summary Table:
+    │   ├── Student ID
+    │   ├── Full Name
+    │   ├── Course
+    │   ├── Total Present
+    │   ├── Total Absent
+    │   └── Total Late
+    └── Detailed Records:
+        ├── Student Name
+        ├── Subject
+        ├── Date
+        ├── Status
+        └── Time
+Step 5: Export options (if available)
+
+8.2 STUDENT DETAILS REPORT WORKFLOW
+────────────────────────────────────
+Location: /reports/student-details/
+Access: Admin only
+
+Step 1: Navigate to Student Details Report
+Step 2: Apply Filters:
+    ├── Course
+    ├── Year Level
+    ├── Section
+    └── Student (optional)
+Step 3: View Report:
+    ├── Student Information
+    ├── Enrollment Details
+    ├── Attendance Summary
+    └── Attendance Timeline
+
+8.3 TEACHER DETAILS REPORT WORKFLOW
+─────────────────────────────────────
+Location: /reports/teacher-deatil/
+Access: Admin only
+
+Step 1: Navigate to Teacher Details Report
+Step 2: Apply Filters:
+    ├── Teacher (dropdown)
+    └── School Year
+Step 3: View Report:
+    ├── Teacher Information
+    ├── Assigned Subjects
+    ├── Total Students
+    └── Attendance Statistics
+
+8.4 ATTENDANCE SUMMARY REPORT WORKFLOW
+──────────────────────────────────────
+Location: /reports/attendance-sumary/
+Access: Admin only
+
+Step 1: Navigate to Attendance Summary
+Step 2: Apply Filters:
+    ├── Date Range
+    ├── Course
+    ├── Year Level
+    └── Section
+Step 3: View Summary:
+    ├── Overall Statistics
+    ├── By Subject Breakdown
+    └── By Status Breakdown
+
+8.5 PARENT CHILD SUMMARY REPORT WORKFLOW
+────────────────────────────────────────
+Location: /reports/parent-child-summary/
+Access: Parent only
+
+Step 1: Navigate to Parent Child Summary
+Step 2: Select Child (if multiple)
+Step 3: Apply Filters:
+    ├── Date Range
+    └── Subject (optional)
+Step 4: View Summary:
+    ├── Attendance Overview
+    ├── By Subject Breakdown
+    └── Attendance Percentage
+
+8.6 PARENT ATTENDANCE TIMELINE WORKFLOW
+────────────────────────────────────────
+Location: /reports/parent-child-timeline
+Access: Parent only
+
+Step 1: Navigate to Attendance Timeline
+Step 2: Select Child (if multiple)
+Step 3: View Timeline:
+    ├── Chronological list of attendance
+    ├── Date
+    ├── Subject
+    ├── Status
+    └── Time
+
+================================================================================
+                   9. ACCOUNT MANAGEMENT WORKFLOW
+================================================================================
+
+9.1 FIRST LOGIN WORKFLOW
+─────────────────────────
+Step 1: User receives credentials
+    ├── Email (auto-generated)
+    ├── Username (auto-generated)
+    └── Password (random 8 characters)
+Step 2: User logs in with credentials
+Step 3: System checks first_login flag
+    └── If True → Redirect to /accounts/change-password/
+Step 4: User changes password
+    ├── Enter new password
+    ├── Confirm new password
+    └── System validates password strength
+Step 5: System updates:
+    ├── Sets first_login = False
+    └── Updates password hash
+Step 6: Redirect to appropriate dashboard based on role
+
+9.2 CHANGE PASSWORD WORKFLOW
+─────────────────────────────
+Step 1: Navigate to /accounts/change-password/
+Step 2: Enter current password
+Step 3: Enter new password
+Step 4: Confirm new password
+Step 5: System validates:
+    ├── Current password is correct
+    ├── New password meets requirements
+    └── New password != current password
+Step 6: System updates password
+Step 7: Show success message
+Step 8: Redirect to dashboard
+
+9.3 LOGOUT WORKFLOW
+───────────────────
+Step 1: Click "Logout" button/link
+Step 2: System logs out user
+    ├── Clears session
+    └── Invalidates authentication
+Step 3: Redirect to login page
+
+================================================================================
+                 10. SUBJECT & ASSIGNMENT WORKFLOW
+================================================================================
+
+10.1 SUBJECT CREATION WORKFLOW
+───────────────────────────────
+Step 1: Admin navigates to /academic/subjects/
+Step 2: Click "Add Subject"
+Step 3: Fill Subject Form:
+    ├── Course (select from existing courses)
+    ├── Subject Code (e.g., IT1101)
+    ├── Subject Name (e.g., Introduction to Computing)
+    ├── Semester Number (1st/2nd)
+    └── Year Level (1st, 2nd, 3rd, 4th)
+Step 4: System validates:
+    ├── Subject code + semester + year_level must be unique
+    └── Course must exist
+Step 5: Save → Subject created
+
+10.2 TEACHER ASSIGNMENT WORKFLOW
+─────────────────────────────────
+Step 1: Admin navigates to /academic/assignments/add-page/
+Step 2: Select Teacher (from datalist)
+Step 3: Select Year Level
+    └── System filters subjects by year_level
+Step 4: Select School Year (e.g., 2024-2025)
+Step 5: For each subject:
+    ├── Check sections to assign (A, B, C, D)
+    └── System checks if offering already exists
+Step 6: System creates SubjectOffering:
+    ├── Links teacher to subject
+    ├── Sets year level
+    ├── Sets section
+    └── Sets school year
+Step 7: System automatically enrolls students:
+    └── Students matching (course + year + section) → enrolled in subject
+Step 8: Save → Assignment created
+
+10.3 STUDENT ENROLLMENT WORKFLOW
+────────────────────────────────
+Step 1: When student is created/edited:
+    ├── Admin selects subjects
+    └── System links student to subjects (ManyToMany)
+Step 2: When subject offering is created:
+    ├── System finds students matching:
+    │   ├── Course = offering.subject.course
+    │   ├── Year = offering.year
+    │   └── Section = offering.section
+    └── System enrolls matching students in subject
+Step 3: Student can view enrolled subjects in dashboard
+
+================================================================================
+                           WORKFLOW SUMMARY
+================================================================================
+
+KEY WORKFLOWS BY ROLE:
+
+ADMIN:
+├── User Management (Teachers, Students, Parents)
+├── Subject Management
+├── Teacher Assignment
+├── Dashboard Overview
+└── Report Generation
+
+TEACHER:
+├── Mark Attendance
+├── View Student Lists
+├── View Assigned Subjects
+└── Dashboard Overview
+
+STUDENT:
+├── View Personal Attendance
+├── View Enrolled Subjects
+└── Dashboard Overview
+
+PARENT:
+├── View Children's Attendance
+├── View Attendance by Subject
+├── View Attendance Timeline
+└── Dashboard Overview
+
+COMMON WORKFLOWS:
+├── Login/Logout
+├── Password Change (First Login)
+└── Dashboard Navigation
+
+================================================================================
+                            END OF DOCUMENT
+================================================================================
+
